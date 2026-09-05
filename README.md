@@ -4,9 +4,13 @@ Physics-Informed Neural Network 기반 AI Engineering Portfolio의 버전 관리
 
 ## Versioned Notebooks
 
-- `Online_PINN_2D_Executed_20260831_Original.ipynb`: 기존 실행 결과 보존본
-- `Online_PINN_2D_Portfolio_V2.ipynb`: 검증된 2D Wave 연구·비교 기준본
-- `Online_PINN_PDE_Framework_V3.ipynb`: 단계별 런타임 검증과 재개 가능한 연구 workflow 개발본
+| Version | Notebook | Status | Purpose |
+|---|---|---|---|
+| V1 | [`Online_PINN_2D_Portfolio_V1_Executed.ipynb`](outputs/Online_PINN_2D_Portfolio_V1_Executed.ipynb) | 실행 및 회귀검증 완료 | 고정 50,000 iteration 기반 2D Wave 실행 결과 보존본 |
+| V2 | [`Online_PINN_2D_Portfolio_V2.ipynb`](outputs/Online_PINN_2D_Portfolio_V2.ipynb) | 코드 구현 및 정적 검증 완료 | 최대 100,000 iteration과 Relative L1/L2 목표기반 중단 구조 |
+| V3 | [`Online_PINN_PDE_Framework_V3.ipynb`](outputs/Online_PINN_PDE_Framework_V3.ipynb) | 연구 workflow 개발 중 | 단계별 런타임 검증과 재개 가능한 PDE framework |
+
+V1에는 6개 방법과 4개 seed의 24개 비교 실험, API, Hybrid RAG, Agent, 문서 생성 및 최종 통합 테스트 결과가 저장되어 있습니다. V2의 목표기반 중단 방식은 전체 GPU benchmark를 다시 실행하기 전이므로 실행 검증 완료로 표시하지 않습니다.
 
 V3의 현재 구현 범위는 Wave2D입니다. Burgers, Kovasznay Forward/Inverse 및 Taylor-Green Vortex는 exact-solution 검증을 선행한 뒤 단계적으로 추가합니다.
 

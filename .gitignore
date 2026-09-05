@@ -14,7 +14,7 @@ work/pdf_review/
 
 # Canonical notebooks only
 outputs/*.ipynb
-!outputs/Online_PINN_2D_Executed_20260831_Original.ipynb
+!outputs/Online_PINN_2D_Portfolio_V1_Executed.ipynb
 !outputs/Online_PINN_2D_Portfolio_V2.ipynb
 !outputs/Online_PINN_PDE_Framework_V3.ipynb
 
@@ -45,4 +45,3 @@ rag_artifacts/
 credentials.json
 token.json
 secrets/
-
