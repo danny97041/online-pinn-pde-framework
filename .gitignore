@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Temporary review and transformation files
+tmp/
+work/tmp/
+work/pdf_review/
+
+# Canonical notebooks only
+outputs/*.ipynb
+!outputs/Online_PINN_2D_Executed_20260831_Original.ipynb
+!outputs/Online_PINN_2D_Portfolio_V2.ipynb
+!outputs/Online_PINN_PDE_Framework_V3.ipynb
+
+# Generated training artifacts
+*.h5
+*.keras
+*.ckpt
+*.ckpt.*
+checkpoint
+model_artifacts/
+training_state/
+problem_artifacts/
+training/
+
+# Generated retrieval artifacts
+rag_artifacts/
+*.faiss
+*.index
+*.npy
+*.npz
+
+# Backup bundles and generated archives
+*.zip
+
+# Local secrets and credentials
+.env
+.env.*
+credentials.json
+token.json
+secrets/
+
