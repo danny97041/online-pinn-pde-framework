@@ -124,8 +124,8 @@ def main():
     print(f"V3 notebook valid   : {V3}")
     print("Runtime CPU gate    : PASS")
     print("Runtime GPU gate    : PASS")
-    print("Stage 8 approval    : PASS")
-    print("Checkpoint design   : PASS")
+    print("Stage 8 approval    : STATIC CHECK ONLY (not executed)")
+    print("Checkpoint design   : STATIC CHECK ONLY (restore not executed)")
     print("Code cell syntax    : PASS")
 
 
