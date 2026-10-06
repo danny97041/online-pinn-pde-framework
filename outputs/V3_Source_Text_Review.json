@@ -1,0 +1,39 @@
+{
+  "scope": "Source descriptions, formatting, encoding and optional-check accounting; no model execution",
+  "python_files_reviewed": 12,
+  "syntax_compilation": "passed",
+  "numerical_ast_unchanged": {
+    "candidate_runtime.py": true,
+    "wave_inference.py": true,
+    "wave_runtime.py": true,
+    "equations.py": true,
+    "contracts.py": true
+  },
+  "planner_and_hybrid_rag_source_byte_unchanged": {
+    "services.py": true,
+    "natural_language.py": true
+  },
+  "runtime_verification": "pending",
+  "training_executed": false,
+  "changes": [
+    "Historical escaped headings replaced by readable comments",
+    "Module and factory descriptions distinguish active policies from historical helpers",
+    "Archive integrity and prior evidence are not described as fresh runtime approval",
+    "UTF-8 explicit for distribution JSON reads",
+    "Optional training check is included in aggregate pass/fail and update accounting"
+  ],
+  "files_sha256": {
+    "__init__.py": "2cf2f471c0846a747d7c266c5afdfc1403bb2dd45e62591c68d6e0ad20a38c7f",
+    "__main__.py": "ce726187a495a42ac6c6cbccf98695dedecb384bff475ae19e92b27c96033086",
+    "candidate_runtime.py": "9266876a46199393a74f9319aec7670c87923ca22f389694334bbfb0675260e7",
+    "colab_config.py": "869e3e9d15cde146e7ea1eaf4738c15db2e3c7bdbf2336a83c197a395823a3f3",
+    "colab_entry.py": "0a6d988d89a622762a7f85f90bde7b4bf6f7224912dd3950e30a91ca341444b4",
+    "contracts.py": "80dd55585f3663fd8de3aa18be6ae5fc1e3eff82eaf6240c94317efe859542c9",
+    "distribution.py": "b1ba65a27f13989d0a838f91f08df33d110eaa69240223283cefa9429436f153",
+    "equations.py": "1a29b5226343df9bc8bdaca6fcb0920b1342cec23a4326ccaa070a8a3a3984a8",
+    "natural_language.py": "15cd1880d8dc231289bbdd654973a328a4fb5fe6631566666bace895bb29839d",
+    "services.py": "fc017805d7226d4f00cbbc9b578b187e2ac4d127d94479d129e8d162e3b2c37d",
+    "wave_inference.py": "c9e7733aeb358be5baa26166b0e76b411388f1508bbef362befde103a1f5cfec",
+    "wave_runtime.py": "5b9184ad5d87a325bc76d1b9b9e935b6eb701d83096c7753556e37a021404263"
+  }
+}

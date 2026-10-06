@@ -1,0 +1,25 @@
+name: V3 readable source
+on:
+  push:
+    paths: ["v3/**", "outputs/Online_PINN_PDE_Framework_V3_Complete.ipynb"]
+  pull_request:
+    paths: ["v3/**", "outputs/Online_PINN_PDE_Framework_V3_Complete.ipynb"]
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m compileall -q v3
+      - run: pip install numpy
+      - name: Results definitions do not import TensorFlow
+        run: |
+          python - <<'PY'
+          import sys
+          from v3 import context
+          ns = context()
+          assert 'tensorflow' not in sys.modules
+          assert ns['release_settings']('poisson2d')['base_lr'] == 0.004
+          PY

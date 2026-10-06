@@ -17,6 +17,7 @@ outputs/*.ipynb
 !outputs/Online_PINN_2D_Portfolio_V1_Executed.ipynb
 !outputs/Online_PINN_2D_Portfolio_V2.ipynb
 !outputs/Online_PINN_PDE_Framework_V3.ipynb
+!outputs/Online_PINN_PDE_Framework_V3_Complete.ipynb
 
 # Generated training artifacts
 *.h5
@@ -45,3 +46,4 @@ rag_artifacts/
 credentials.json
 token.json
 secrets/
+
