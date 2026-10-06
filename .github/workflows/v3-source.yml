@@ -1,9 +1,9 @@
 name: V3 readable source
 on:
   push:
-    paths: ["v3/**", "outputs/Online_PINN_PDE_Framework_V3_Complete.ipynb"]
+    paths: ["v3/**", "outputs/Online_PINN_PDE_Framework_V3.ipynb"]
   pull_request:
-    paths: ["v3/**", "outputs/Online_PINN_PDE_Framework_V3_Complete.ipynb"]
+    paths: ["v3/**", "outputs/Online_PINN_PDE_Framework_V3.ipynb"]
 jobs:
   syntax:
     runs-on: ubuntu-latest

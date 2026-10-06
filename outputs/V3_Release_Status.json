@@ -21,7 +21,7 @@
   "deployment_runtime_verification": "pending",
   "previous_checks_scope": "Historical evidence from the pre-text-review source; not fresh execution qualification.",
   "source_text_review": {
-    "scope": "Source descriptions, formatting, encoding and optional-check accounting; no model execution",
+    "scope": "한국어 사용자 안내·보고서·파일명 정리. 보고서 표시를 제외한 수치 집계와 학습 코드는 보존. 모델 실행 검증 아님.",
     "python_files_reviewed": 12,
     "syntax_compilation": "passed",
     "numerical_ast_unchanged": {
@@ -31,6 +31,7 @@
       "equations.py": true,
       "contracts.py": true
     },
+    "report_presentation_excluded_from_ast_comparison": true,
     "planner_and_hybrid_rag_source_byte_unchanged": {
       "services.py": true,
       "natural_language.py": true
@@ -38,20 +39,19 @@
     "runtime_verification": "pending",
     "training_executed": false,
     "changes": [
-      "Historical escaped headings replaced by readable comments",
-      "Module and factory descriptions distinguish active policies from historical helpers",
-      "Archive integrity and prior evidence are not described as fresh runtime approval",
-      "UTF-8 explicit for distribution JSON reads",
-      "Optional training check is included in aggregate pass/fail and update accounting"
+      "사용자 안내와 비교 보고서를 한국어로 정리",
+      "실행 노트북·결과·검증·소스의 정식 파일명을 분리",
+      "개인 작업 메모와 승격 절차를 개발자 문서로 분리",
+      "보고서 수치 집계·학습 일정·샘플링·언어 모델 및 검색 소스 보존"
     ],
     "files_sha256": {
       "__init__.py": "2cf2f471c0846a747d7c266c5afdfc1403bb2dd45e62591c68d6e0ad20a38c7f",
       "__main__.py": "ce726187a495a42ac6c6cbccf98695dedecb384bff475ae19e92b27c96033086",
       "candidate_runtime.py": "9266876a46199393a74f9319aec7670c87923ca22f389694334bbfb0675260e7",
-      "colab_config.py": "869e3e9d15cde146e7ea1eaf4738c15db2e3c7bdbf2336a83c197a395823a3f3",
-      "colab_entry.py": "0a6d988d89a622762a7f85f90bde7b4bf6f7224912dd3950e30a91ca341444b4",
-      "contracts.py": "80dd55585f3663fd8de3aa18be6ae5fc1e3eff82eaf6240c94317efe859542c9",
-      "distribution.py": "b1ba65a27f13989d0a838f91f08df33d110eaa69240223283cefa9429436f153",
+      "colab_config.py": "bc7b13ab0cd801b046d26f2645342293b37363ff8f4bdd3364a6e5e760dc7d77",
+      "colab_entry.py": "e76eb9b59e282745f71e62ae390bc22f3b1a203671dc52a09c71247c9a2129ad",
+      "contracts.py": "ae09d07ddb8035f91d8b0678ea30c917c6b3312110bcfc56ca163fa52aa0e710",
+      "distribution.py": "5ca69b8cdae68315c240a07f5f55822eaee81d0bf3f6fa180160bf0ad30098bf",
       "equations.py": "1a29b5226343df9bc8bdaca6fcb0920b1342cec23a4326ccaa070a8a3a3984a8",
       "natural_language.py": "15cd1880d8dc231289bbdd654973a328a4fb5fe6631566666bace895bb29839d",
       "services.py": "fc017805d7226d4f00cbbc9b578b187e2ac4d127d94479d129e8d162e3b2c37d",
@@ -60,5 +60,8 @@
     }
   },
   "main_promoted": false,
-  "overall_physics_approved": false
+  "overall_physics_approved": false,
+  "distribution_language": "ko",
+  "distribution_notebook": "Online_PINN_PDE_Framework_V3.ipynb",
+  "distribution_results": "Online_PINN_PDE_Framework_V3_Results.zip"
 }

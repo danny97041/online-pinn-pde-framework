@@ -437,41 +437,65 @@ def u_report(root, rows, modules, routes):
         writer = csv.DictWriter(f, fieldnames=keys, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(groups)
+    u_report_markdown(root, groups, modules)
+    return summary
+
+
+def u_report_markdown(root, groups, modules=None):
+    """수치 집계를 바꾸지 않고 사용자용 비교 보고서를 한국어로 표시합니다."""
+    equations = {
+        "wave2d": "2차원 파동",
+        "heat2d": "2차원 열전도",
+        "poisson2d": "2차원 포아송",
+        "burgers": "버거스",
+        "kovasznay_forward": "Kovasznay 순방향",
+        "kovasznay_inverse": "Kovasznay 역문제",
+        "taylor_green": "Taylor–Green",
+        "darcy2d": "2차원 Darcy",
+        "reaction_diffusion": "반응–확산",
+    }
+    methods = {
+        "baseline": "기본 PINN",
+        "loss_sa": "손실항 SA",
+        "ff": "푸리에 특징",
+        "ff_loss_sa": "푸리에 특징 + 손실항 SA",
+        "ff_curriculum": "푸리에 특징 + 커리큘럼",
+    }
     lines = [
-        "# V3 integrated comparison",
+        "# 온라인 PINN PDE 프레임워크 V3 — 실험 비교",
         "",
-        "10% research milestone. 5% and local high-precision improvement deferred to V4.",
-        "No overall physics approval. Historical 5% stopping is preserved, not rewritten as a 10% run.",
+        f"{len({r['equation'] for r in groups})}개 방정식의 저장 실험 결과를 비교합니다. 표의 오차는 백분율입니다.",
+        "10%는 연구용 물리장 오차 목표이며 산업 인증이나 전체 물리 정확도 승인을 의미하지 않습니다.",
+        "Wave의 과거 5% 중단 이력은 보존하며 새 10% 목표 실험으로 바꾸어 표시하지 않습니다.",
         "",
-        "| Equation | Method | Seeds | Mean field L2 % | Field <=10% | Mean coefficient error % |",
-        "|---|---|---:|---:|---:|---:|",
+        "| 방정식 | 방법 | 시드 수 | 평균 물리장 L2 오차 (%) | 10% 이하 실험 수 | 평균 계수 오차 (%) |",
+        "| --- | --- | ---: | ---: | ---: | ---: |",
     ]
-    for r in groups:
-        ce = (
-            "N/A (forward)"
-            if r["lambda_error_mean"] is None
-            else f"{100*r['lambda_error_mean']:.4f}"
+    for row in groups:
+        coefficient = (
+            "해당 없음(순방향)"
+            if row["lambda_error_mean"] is None
+            else f"{100 * row['lambda_error_mean']:.4f}"
         )
+        equation = equations.get(row["equation"], row["equation"])
+        method = methods.get(row["arm"], row["arm"])
         lines.append(
-            f"| {r['equation']} | {r['arm']} | {r['n']} | {100*r['field_l2_mean']:.4f} | {r['field_10pct_count']}/{r['n']} | {ce} |"
+            f"| {equation} | {method} | {row['n']} | {100 * row['field_l2_mean']:.4f} | "
+            f"{row['field_10pct_count']}/{row['n']} | {coefficient} |"
         )
     lines += [
         "",
-        "## Evidence limits",
+        "## 결과 해석의 범위",
         "",
-        "- Compare Adam and selected postprocessing separately in per-trial JSON; no equal-cost superiority inferred.",
-        "- Wave table/attainment scores use the historical reference grid. The physics audit uses its separate fixed diagnostic grids; its original scores remain in evidence JSON.",
-        "- Different equations use different residual scales; raw residuals are not ranked across equations.",
-        "- Forward problems have no learned-coefficient score, not an automatic full score.",
-        "- BC/IC acceptance and local worst-point qualification remain deferred, not PASS.",
-        "- Synthetic exact labels are not fixed real engineering observations.",
-        "",
-        "## Modules",
-        "",
+        "- Adam과 선택 후처리 결과는 개별 실험 JSON에서 구분합니다. 동일 비용의 우월성을 추론하지 않습니다.",
+        "- Wave 비교표와 도달 점수는 저장된 참조 격자를 사용합니다. 물리 감사는 별도의 고정 진단 격자를 사용합니다.",
+        "- 서로 다른 방정식의 PDE 잔차 원값은 단위와 정규화 척도가 달라 직접 순위화하지 않습니다.",
+        "- 순방향 문제의 계수 점수는 해당 없음이며 자동 만점이 아닙니다.",
+        "- 경계·초기조건 및 국소 최악점의 합격 판정은 별도 검증 대상입니다.",
+        "- 해석해로 생성한 합성 학습값은 실제 공학 관측 데이터와 동일하지 않습니다.",
+        "- 저장된 실험의 검사 이력과 현재 실행한 검사는 구분해야 합니다.",
     ]
-    lines += [f"- {k}: {v}" for k, v in modules.items()]
-    (root / "REPORT.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    return summary
+    (Path(root) / "REPORT.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def u_pick(folder, label, predicate):

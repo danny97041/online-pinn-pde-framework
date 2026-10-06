@@ -1,10 +1,9 @@
 # Online PINN PDE Framework
 
-> **V3 배포 후보 — 실행 검증 전**  
-> 현재 사용자 안내는 [V3 배포 설명](v3/README.md)과
-> [Online_PINN_PDE_Framework_V3_Complete.ipynb](outputs/Online_PINN_PDE_Framework_V3_Complete.ipynb)를 참고하세요.
-> 아래 V1·V2 및 개발 단계 기록은 원문을 보존한 역사적 설명입니다.
-> 새 소스의 실행 검증과 `main` 승격은 아직 완료되지 않았습니다.
+> **V3 사용 안내**  
+> [V3 기능과 빠른 시작](v3/README.md) 및
+> [Online_PINN_PDE_Framework_V3.ipynb](outputs/Online_PINN_PDE_Framework_V3.ipynb)를 참고하세요.
+> 아래에는 V1·V2의 실행 결과와 개발 이력을 제공합니다.
 
 2D Wave-PINN 학습·추론을 FastAPI, Hybrid RAG, AI Agent 및 자동 보고서 생성으로 연결한 AI Engineering Portfolio입니다. 해석해가 있는 PDE를 이용하는 재사용 가능한 framework로 확장하고 있습니다.
 

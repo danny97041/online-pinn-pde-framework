@@ -59,7 +59,7 @@ def main():
             "language_info": {"name": "python"},
         },
     }
-    target = ROOT / "outputs/Online_PINN_PDE_Framework_V3_Complete.ipynb"
+    target = ROOT / "outputs/Online_PINN_PDE_Framework_V3.ipynb"
     target.parent.mkdir(exist_ok=True)
     target.write_text(json.dumps(notebook, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(target)

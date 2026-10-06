@@ -1,113 +1,102 @@
-# V3 result distribution — deployment candidate
+# 온라인 PINN PDE 프레임워크 V3
 
-The archive contains completed historical experiments. "Complete" in the two
-filenames describes the packaged results, not approval of this deployment branch.
-Current sequence: source-text review → deployment branch → execution verification
-→ main promotion → public presentation. This source revision awaits step 2.
+해석해가 있는 PDE 실험을 저장 모델 예측, 하이브리드 검색, 자연어 도구 호출,
+선택적 추가 학습으로 연결하는 프레임워크입니다.
+통합 결과에는 9개 방정식·65개 완료 실험의 모델과 비교 결과가 포함되어 있습니다.
 
-## Colab: exactly two user files
+## 빠른 시작
 
-Put these files together in `MyDrive/PINN` and Run all:
+| 파일 | 역할 |
+| --- | --- |
+| `Online_PINN_PDE_Framework_V3.ipynb` | 한국어 안내와 설정이 포함된 실행 노트북 |
+| `Online_PINN_PDE_Framework_V3_Results.zip` | 저장 모델·비교 결과·근거·검사 이력 |
 
-1. `Online_PINN_PDE_Framework_V3_Complete.ipynb`
-2. `Online_PINN_PDE_Framework_V3_Complete_Results.zip`
+두 파일을 `MyDrive/PINN`에 함께 두고 기본값으로 **모두 실행**하세요.
+저장 결과 조회에는 TensorFlow·GPU·Qwen·재학습이 필요하지 않습니다.
+별도의 원본 모델 ZIP도 선택하지 않습니다.
 
-Default `ACTION="results"` reads the 65 completed experiments across nine
-equations without importing TensorFlow, running an LLM, or starting training.
-No Stage7 ZIP or original model ZIP needs to be selected separately.
+`Online_PINN_PDE_Framework_V3_Validation.zip`은 검사 출력입니다.
+개발용 `Online_PINN_PDE_Framework_V3_Source.zip`은 일반 결과 조회에 필요하지 않습니다.
 
-The notebook and `.py` distribution have the same readable source. Lazy runtime
-factories are ordinary Python, not base64, escaped source strings, or executable
-code extracted from results. The original inputs are not overwritten.
-After editing `v3/*.py`, run `python tools/sync_v3_notebook.py` to synchronize the
-notebook. Colab settings/entry cells live in `v3/colab_config.py` and
-`v3/colab_entry.py`; no encoded numerical-runtime payload is generated.
+## 기능
 
-## Actions
+| ACTION | 목적 | 필요한 환경 |
+| --- | --- | --- |
+| `results` | 저장 비교표와 보고서 | NumPy |
+| `predict` | 지정 좌표의 저장 모델 예측 | TensorFlow |
+| `agent` | 결과 도구를 이용한 자연어 응답 | FastAPI, 선택적으로 Qwen·E5 |
+| `evaluate` | 기본 30문항·추가 표현 15문항과 API 검사 | FastAPI·HTTPX, 예측용 TensorFlow, 선택적으로 Qwen·E5 |
+| `train` | 새 학습 또는 Adam 체크포인트 재개 | TensorFlow·SciPy |
 
-| ACTION | Purpose | Runtime |
-|---|---|---|
-| results | Saved comparison and evidence | NumPy only; CPU |
-| predict | Selected saved model / explicit points | TensorFlow |
-| agent | Bounded result tools, optional Qwen | FastAPI; optional PyTorch/Transformers |
-| evaluate | 30 questions + 15 independently phrased questions | Same as Agent + HTTPX |
-| train | Explicit new experiment or Adam checkpoint continuation | TensorFlow + SciPy |
+변수명·API 키·방정식 및 방법 식별자는 호환성을 위해 영문으로 유지합니다.
+Colab 제공 TensorFlow를 우선 사용하며 특정 버전 일치를 강제하지 않습니다.
+도구 검사에는 `fastapi httpx`, 실제 언어 모델·E5 검색에는 `torch transformers>=5`가 필요합니다.
+선택 기능의 의존성만 설치하세요. 모델은 해당 기능을 처음 사용할 때 내려받습니다.
 
-LLM choice preserves V1/V2: `Qwen/Qwen3.5-0.8B`. Deterministic tools supply
-numbers. Qwen advises the intent; the grounded controller builds allowlisted calls.
-Planner agreement and controller fallbacks are recorded separately. No shell, deletion, public server,
-or automatic retraining. Configuration proposals require user confirmation.
-Actual LLM results and non-LLM checks are reported separately, including failures.
+## 자연어 도구 호출과 검색
 
-Dependencies are loaded only for the selected action. Use Colab's TensorFlow
-instead of forcibly replacing it. For optional services install `fastapi httpx`;
-for LLM and hybrid E5 retrieval `torch transformers>=5`.
-LLM weights download on first use, not on simple result review.
+언어 모델은 `Qwen/Qwen3.5-0.8B`입니다. Qwen은 요청 의도를 제안하고,
+제어기는 허용된 도구만 호출합니다. 숫자는 저장 결과와 계산 도구에서 가져옵니다.
+Qwen의 판단 일치와 제어기의 보정 횟수를 별도로 기록하며
+시스템의 성공을 언어 모델 단독 정확도로 표시하지 않습니다.
+셸 실행·비밀 조회·파일 삭제·자동 재학습은 허용하지 않습니다.
 
-Hybrid retrieval restores V1/V2's multilingual E5 + BM25, semantic/keyword
-weights 0.6/0.4, RRF k=60 and document-level coverage. Normalized exact inner
-products equal FAISS IndexFlatIP scores; the lightweight adapter uses NumPy
-without requiring FAISS binaries. E5 mean pooling and query/passage prefixes
-are preserved. `DENSE_RAG=True` is the Agent/evaluation default; False explicitly
-selects BM25 only. Default results viewing does not build an index or load E5.
-Compact indexed evidence links to complete source histories; original histories
-remain in the ZIP. Dense numeric embeddings are cached by corpus hash.
+다국어 E5와 BM25의 가중치는 0.6과 0.4, 순위 결합의 RRF 상수는 60입니다.
+문서별 근거 분산, 질의·문서 접두사, 평균 풀링을 사용합니다.
+정규화 임베딩의 내적을 NumPy로 계산하여 FAISS 바이너리를 요구하지 않습니다.
+캐시는 근거 내용의 해시로 구분합니다.
+`DENSE_RAG=False`는 BM25만 사용하는 경량 경로입니다.
+기본 결과 조회에서는 인덱스를 만들거나 언어 모델을 로드하지 않습니다.
 
-## Additional training
+## 추가 학습과 설정 변경
 
-Select `ACTION="train"`, equation, `EXECUTION="new"` or `"resume"`.
-`TRAIN_OVERRIDES` is an editable dictionary. Full defaults print before execution.
-Keep `TRAINING_ENABLED=False` to inspect settings without updates. After reviewing
-the settings, set it to True and Run all. There is no second RUN phrase prompt.
+`ACTION="train"`에서 방정식과 `EXECUTION="new"` 또는 `"resume"`을 선택합니다.
+`TRAINING_ENABLED=False`에서는 설정만 보여주고 학습하지 않습니다.
+`TRAIN_OVERRIDES`에서 값을 변경한 뒤 확인하고 학습을 켜세요.
 
-Example: `{"arms": ["ff"], "cap": 100000, "base_lr": 0.002}`.
-The total cap includes already completed Adam steps when resuming.
+예: `{"arms": ["ff"], "cap": 100000, "base_lr": 0.002, "field_target": 0.10}`.
+`cap`은 재개 전의 완료 횟수를 포함한 누적 Adam 상한입니다.
+새 실험의 기본 시드는 3234 하나입니다.
 
-For historical completed checkpoints leave `RESUME_ZIP_FILENAME=""`.
-For a newly created additional-training ZIP specify its filename (not a full path).
-Resume restores Adam, both optimizer states where applicable, SA and sampling
-cycle. It does NOT pretend the L-BFGS-selected model has the Adam optimizer state.
-Changed architecture, sampling, seed or optimizer schedule requires a new run.
-Target/total cap can change with the change history retained.
+통합된 과거 Adam 체크포인트에서 재개할 때는 `RESUME_ZIP_FILENAME=""`을 유지합니다.
+추가 학습 결과에서 재개할 때는 해당 ZIP의 파일명만 입력하세요.
+구조·샘플링·시드·학습률 일정이 바뀌면 새 학습이 필요하다는 오류를 표시합니다.
+Adam·SA·샘플링 주기를 복원하며 L-BFGS 선택 모델을 Adam 상태로 가장하지 않습니다.
+Wave의 저장 구조·정규화·표본 수·SA 구현을 보존하고 지원하지 않는 변경은 명시적으로 거부합니다.
 
-Candidate adapters expose width/depth, FF banks, learning rates, all training
-sample counts, LHS period, SA, stop policy and L-BFGS options. Evaluation points
-are independent and fixed. Wave preserves its historical product FF architecture,
-calibration, sample counts and SA implementation; unsupported changes are rejected
-with the precise names instead of being ignored.
+준비와 개별 실험 완료 경계에서 실행당 하나의 ZIP을 갱신합니다.
+partial ZIP은 만들지 않습니다. 연결이 끊기면 진행 중이던 미완료 실험은 유실될 수 있습니다.
+입력 통합 결과는 변경하지 않습니다.
 
-Each run writes one rolling ZIP after preparation and completed trial boundaries.
-No partial backup ZIP sequence. A runtime disconnect may lose the unfinished trial.
-Input results remain unchanged; final output includes settings and runtime records.
+## 검사 기능
 
-## Evidence limitations
+`evaluate`는 쉬움·중간·어려움 각 10문항과 별도 표현 각 5문항을 검사합니다.
+도구 순서·수치·근거·응답 상태·위험 요청의 거부를 확인합니다.
+API 검사는 내부 요청 검사이며 외부 서버 운영 인증이 아닙니다.
+`CHECK_TRAINING=True`는 두 방정식에서 총 6회의 시험용 Adam 업데이트와 별도 연결 검사를 수행합니다.
+현재 자동 평가만으로 전수 모델 검증, Wave 재개, 실제 5천 회 LHS 경계까지 확인되는 것은 아닙니다.
 
-- Wave and Heat: 3 seeds each. Other seven equations: 1 seed each.
-- Preserve historical Wave 5% stopping; do not relabel it as a prospective 10% run.
-- Adam and selected postprocessing are separate; no equal-budget superiority claim.
-- Do not compare raw residual units across equations. Forward coefficients are N/A.
-- 10% is a research milestone, not industrial certification. BC/IC and worst-point
-  acceptance remain deferred to V4.
-- Version changes are recorded; cross-version identical training paths are not claimed.
+검사 이력은 결과 ZIP의 `validation/`에 있습니다.
+과거 검사와 새 실행 검사를 구분하며 실패·미실행을 통과로 처리하지 않습니다.
 
-## GitHub
+## 결과 해석의 한계
 
-Target repository: https://github.com/danny97041/online-pinn-pde-framework
+- Wave와 Heat는 각각 3개 시드, 나머지 7개 방정식은 각각 1개 시드입니다.
+- Wave의 과거 5% 중단을 새 10% 목표 실험으로 바꾸어 표시하지 않습니다.
+- Adam과 선택 후처리 결과를 분리하며 동일 비용의 우월성을 추론하지 않습니다.
+- 방정식 사이에서 단위가 다른 PDE 잔차 원값을 직접 순위화하지 않습니다.
+- 순방향 문제의 학습 계수 점수는 해당 없음이며 자동 만점이 아닙니다.
+- V3의 10%는 연구 목표입니다. 경계·초기조건 및 국소 최악점의 합격 판정은 별도 검증 대상입니다.
+- TensorFlow 버전이 달라도 동일한 학습 경로가 재현된다고 주장하지 않습니다.
 
-Publish the readable `v3/` source and notebook. Put the completed result ZIP in a
-GitHub Release so users download exactly the notebook and that ZIP. Do not commit
-the LLM cache, intermediate source ZIPs, credentials, or test dependency folders.
+## 개발자 안내
 
-The local verification records are inside `validation/` of the result ZIP.
-Unavailable or failed actual LLM tests must not be described as passed.
+노트북과 `v3/*.py`는 같은 평문 소스를 사용합니다.
+결과 ZIP의 Python 코드를 실행하거나 인코딩된 실행 코드를 복원하지 않습니다.
+수정 후 `python tools/sync_v3_notebook.py`로 노트북을 동기화하세요.
+배포 검증과 승격 절차는 [개발자 배포 체크리스트](../docs/V3_RELEASE_CHECKLIST.md)를 참고하세요.
 
-Local saved-model inference and reference-error reconstruction are checked
-separately from checkpoint continuation. On Windows, TensorFlow checkpoint writes
-under a Unicode workspace path could not be tested successfully. In Colab use
-`ACTION="evaluate"`, `USE_LLM=False`, `CHECK_TRAINING=True` for six disposable
-new/resumed trial Adam updates plus separate wiring probes. This is a behavior
-check, not a benchmark rerun.
+저장소: https://github.com/danny97041/online-pinn-pde-framework
 
-When `CHECK_TRAINING=True`, the evaluation output records training activity and
-combines the behavior-check outcome with the service checks. Historical passing
-records do not substitute for execution verification of a modified source revision.
+소스와 노트북은 Git으로, 통합 결과 ZIP은 별도 배포 자산으로 제공합니다.
+모델 캐시·의존성 폴더·비밀정보는 공개 저장소에 넣지 않습니다.

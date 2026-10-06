@@ -2,7 +2,7 @@
 # ACTION="results"는 재학습하지 않습니다. 선택 기능의 목적은 COLAB.md에 설명되어 있습니다.
 ACTION = "results"  # @param ["results", "predict", "agent", "evaluate", "train"]
 FOLDER = "/content/drive/MyDrive/PINN"  # @param {type:"string"}
-ZIP_FILENAME = "Online_PINN_PDE_Framework_V3_Complete_Results.zip"  # @param {type:"string"}
+ZIP_FILENAME = "Online_PINN_PDE_Framework_V3_Results.zip"  # @param {type:"string"}
 EQUATION = "poisson2d"  # @param {type:"string"}
 ARM = "baseline"  # @param ["baseline", "loss_sa", "ff", "ff_loss_sa", "ff_curriculum"]
 SEED = 3234  # @param {type:"integer"}

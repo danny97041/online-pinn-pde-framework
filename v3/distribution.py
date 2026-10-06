@@ -12,7 +12,7 @@ import tempfile
 import time
 import uuid
 
-RESULTS_FILENAME = "Online_PINN_PDE_Framework_V3_Complete_Results.zip"
+RESULTS_FILENAME = "Online_PINN_PDE_Framework_V3_Results.zip"
 LOCAL_MODEL = "Qwen/Qwen3.5-0.8B"
 
 
@@ -22,9 +22,11 @@ def release_open(bundle, workspace):
     with zipfile.ZipFile(bundle) as archive:
         contract = json.loads(archive.read("contract.json"))
         if contract.get("distribution_format") != "v3-two-file-1":
-            raise ValueError("Use " + RESULTS_FILENAME + " for this notebook")
+            raise ValueError(
+                "이 노트북에는 " + RESULTS_FILENAME + " 형식의 통합 결과 ZIP을 사용하세요."
+            )
         if workspace.exists():
-            raise ValueError("Use a fresh extraction directory; input ZIP is never overwritten")
+            raise ValueError("새 압축 해제 폴더가 필요합니다. 입력 ZIP은 덮어쓰지 않습니다.")
         archive.extractall(workspace)
     return json.loads((workspace / "summary.json").read_text(encoding="utf-8"))
 
@@ -40,7 +42,7 @@ def release_find(folder, explicit=""):
     path = Path(folder) / RESULTS_FILENAME
     if path.is_file():
         return path
-    raise FileNotFoundError("Place " + RESULTS_FILENAME + " beside the notebook in " + str(folder))
+    raise FileNotFoundError(str(folder) + "에 노트북과 " + RESULTS_FILENAME + "을 함께 두세요.")
 
 
 def release_predictor(root):

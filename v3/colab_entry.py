@@ -28,7 +28,7 @@ verification_file = RUN_DIR / "validation/status.json"
 if verification_file.exists():
     verification = json.loads(verification_file.read_text(encoding="utf-8"))
     if verification.get("deployment_runtime_verification") == "pending":
-        print("배포 브랜치: 이 소스 수정본의 실행 검증은 예정입니다. 과거 검사 결과와 구분하세요.")
+        print("검사 이력: 과거 저장 기록과 새 실행 검사는 구분하여 확인하세요.")
 display(Markdown((RUN_DIR / "REPORT.md").read_text(encoding="utf-8")))
 if ACTION == "predict":
     print(release_predictor(RUN_DIR)(EQUATION, ARM, SEED, POINTS))
@@ -38,9 +38,9 @@ elif ACTION == "agent":
 elif ACTION == "evaluate":
     print("목적: 자연어 30문항 + 별도 표현 15문항 / 도구·API 검사.")
     print(
-        "추가 동작: 일회성 새 학습·재개 검사(6 trial Adam updates + 별도 wiring probes)."
+        "추가 동작: 새 학습·재개 검사(시험용 Adam 업데이트 6회 + 별도 연결 검사)."
         if CHECK_TRAINING
-        else "추가 학습 검사 없음; benchmark 재학습 없음."
+        else "추가 학습 검사 없음; 전체 실험 재학습 없음."
     )
     checks = release_evaluate(RUN_DIR, real_llm=USE_LLM, dense_rag=DENSE_RAG)
     if CHECK_TRAINING:
@@ -52,7 +52,7 @@ elif ACTION == "evaluate":
         ]
         checks["additional_disposable_wiring_probes"] = True
     u_json(RUN_DIR / "validation" / ("actual_llm.json" if USE_LLM else "rules_api.json"), checks)
-    OUTPUT_ZIP = folder / "Online_PINN_PDE_Framework_V3_Checked_Results.zip"
+    OUTPUT_ZIP = folder / "Online_PINN_PDE_Framework_V3_Validation.zip"
     u_pack(RUN_DIR, OUTPUT_ZIP)
     print("요청한 검사 통과:", checks["passed"], "/ 출력:", OUTPUT_ZIP.name)
     display(FileLink(str(OUTPUT_ZIP)))
@@ -95,4 +95,4 @@ elif ACTION == "train":
         print("출력:", saved.name)
         display(FileLink(str(saved)))
 elif ACTION != "results":
-    raise ValueError("Unknown ACTION")
+    raise ValueError("지원하지 않는 기능입니다. ACTION 설정을 확인하세요.")
