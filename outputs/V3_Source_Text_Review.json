@@ -1,6 +1,6 @@
 {
-  "scope": "한국어 사용자 안내·보고서·파일명 정리. 보고서 표시를 제외한 수치 집계와 학습 코드는 보존. 모델 실행 검증 아님.",
-  "python_files_reviewed": 12,
+  "scope": "한국어 조건부 설정·파일명·검사 흐름 수정. 보고서 표시를 제외한 수치 집계와 학습 수식·일정은 보존. 새 검사는 별도 런타임 보고서로 판정.",
+  "python_files_reviewed": 14,
   "syntax_compilation": "passed",
   "numerical_ast_unchanged": {
     "candidate_runtime.py": true,
@@ -10,6 +10,7 @@
     "contracts.py": true
   },
   "report_presentation_excluded_from_ast_comparison": true,
+  "new_checkpoint_factory_hook_excluded_from_ast_comparison": true,
   "planner_and_hybrid_rag_source_byte_unchanged": {
     "services.py": true,
     "natural_language.py": true
@@ -18,22 +19,26 @@
   "training_executed": false,
   "changes": [
     "사용자 안내와 비교 보고서를 한국어로 정리",
-    "실행 노트북·결과·검증·소스의 정식 파일명을 분리",
+    "한국어 선택형 설정과 조건별 활성화, 결과 탭 이동",
+    "결과·검사·학습 ZIP 파일명을 단순화하고 긴 이름 입력도 지원",
+    "모델 전수·Wave 재개·LHS 경계 검사를 선택 실행으로 통합",
     "개인 작업 메모와 승격 절차를 개발자 문서로 분리",
     "보고서 수치 집계·학습 일정·샘플링·언어 모델 및 검색 소스 보존"
   ],
   "files_sha256": {
-    "__init__.py": "2cf2f471c0846a747d7c266c5afdfc1403bb2dd45e62591c68d6e0ad20a38c7f",
+    "__init__.py": "03ac341a40707978292e76f6b8b01619006d63b1c2c4e64d1f4b25d592f3b457",
     "__main__.py": "ce726187a495a42ac6c6cbccf98695dedecb384bff475ae19e92b27c96033086",
     "candidate_runtime.py": "9266876a46199393a74f9319aec7670c87923ca22f389694334bbfb0675260e7",
-    "colab_config.py": "bc7b13ab0cd801b046d26f2645342293b37363ff8f4bdd3364a6e5e760dc7d77",
-    "colab_entry.py": "e76eb9b59e282745f71e62ae390bc22f3b1a203671dc52a09c71247c9a2129ad",
+    "colab_config.py": "55e73a3555d6434f7afd8643799f5f065adfcb0caca287474896eb949b1b90da",
+    "colab_entry.py": "b72433d805cc9c4d32ab9aa2808ba1f64e51732b6a0468f890a0cf85a011e344",
     "contracts.py": "ae09d07ddb8035f91d8b0678ea30c917c6b3312110bcfc56ca163fa52aa0e710",
-    "distribution.py": "5ca69b8cdae68315c240a07f5f55822eaee81d0bf3f6fa180160bf0ad30098bf",
+    "distribution.py": "e38287e1486dd2854812dad6ce871258b0b0408e0df907cf8c1b5e10e0485531",
     "equations.py": "1a29b5226343df9bc8bdaca6fcb0920b1342cec23a4326ccaa070a8a3a3984a8",
+    "interface.py": "1d49be9b03f59d34634b8a036abc64ae18beeccb036bd7fc5a5dee62be435267",
     "natural_language.py": "15cd1880d8dc231289bbdd654973a328a4fb5fe6631566666bace895bb29839d",
     "services.py": "fc017805d7226d4f00cbbc9b578b187e2ac4d127d94479d129e8d162e3b2c37d",
+    "verification.py": "fece87a91a4a0f989ac309e03c6324ec3691b2611350b5d127b2fefe3c8944e8",
     "wave_inference.py": "c9e7733aeb358be5baa26166b0e76b411388f1508bbef362befde103a1f5cfec",
-    "wave_runtime.py": "5b9184ad5d87a325bc76d1b9b9e935b6eb701d83096c7753556e37a021404263"
+    "wave_runtime.py": "c7af4b8be0e01535e79c842c4152fbe88bf58e4699a5c01b7832e1090bf50d72"
   }
 }

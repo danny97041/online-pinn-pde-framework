@@ -21,8 +21,15 @@ def context():
         "candidate_runtime.py",
         "wave_inference.py",
         "wave_runtime.py",
+        "verification.py",
+        "interface.py",
     ]
     for name in modules:
         source = (directory / name).read_text(encoding="utf-8")
         exec(compile(source, str(directory / name), "exec"), namespace)
+    import hashlib
+
+    namespace["V3_EXECUTED_SOURCE_HASHES"] = {
+        name: hashlib.sha256((directory / name).read_bytes()).hexdigest() for name in modules
+    }
     return namespace

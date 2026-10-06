@@ -5590,4 +5590,15 @@ def load_wave_training(BUNDLE, settings=None):
                 )
             )
 
+    def set_wave_state_factory(factory):
+        """Temporarily bind a trusted adapter's checkpoint-aware state builder.
+
+        Restoration must validate saved calibration and optimizer state. This
+        hook does not alter loss, gradients, sampling or solver arithmetic.
+        """
+        nonlocal w8_make_state
+        previous = w8_make_state
+        w8_make_state = factory
+        return previous
+
     return locals()

@@ -12,7 +12,7 @@ import tempfile
 import time
 import uuid
 
-RESULTS_FILENAME = "Online_PINN_PDE_Framework_V3_Results.zip"
+RESULTS_FILENAME = "V3_Results.zip"
 LOCAL_MODEL = "Qwen/Qwen3.5-0.8B"
 
 
@@ -42,6 +42,13 @@ def release_find(folder, explicit=""):
     path = Path(folder) / RESULTS_FILENAME
     if path.is_file():
         return path
+    for name in [
+        "Online_PINN_PDE_Framework_V3_Results.zip",
+        "Online_PINN_PDE_Framework_V3_Validation.zip",
+    ]:
+        path = Path(folder) / name
+        if path.is_file():
+            return path
     raise FileNotFoundError(str(folder) + "에 노트북과 " + RESULTS_FILENAME + "을 함께 두세요.")
 
 
@@ -86,7 +93,10 @@ def release_predictor(root):
                     )
                     model = ns["w8_make_state"](config, arm, seed)[0]
                     model.load_weights(
-                        root / "postprocess/trials" / f"seed_{seed}_{arm}" / "selected.weights.h5"
+                        root
+                        / "postprocess/trials"
+                        / f"seed_{seed}_{arm}"
+                        / "selected.weights.h5"
                     )
                 d = config["domain"]
                 domain = [[d[k + "_min"], d[k + "_max"]] for k in ["x", "y", "t"]]
@@ -100,13 +110,19 @@ def release_predictor(root):
                 model = ns["cu_state"](equation, arm, seed)[0]
                 ns["cu_load_weights"](
                     model,
-                    root / "candidates" / equation / f"seed_{seed}_{arm}" / "selected_weights.npz",
+                    root
+                    / "candidates"
+                    / equation
+                    / f"seed_{seed}_{arm}"
+                    / "selected_weights.npz",
                 )
                 domain = ns["CANDIDATES"][equation]["domain"]
             cache[key] = model, np.asarray(domain, float)
         model, domain = cache[key]
         if x.shape[1] != len(domain) or np.any(x < domain[:, 0]) or np.any(x > domain[:, 1]):
-            raise ValueError("Wrong coordinate dimension or coordinates outside physical domain")
+            raise ValueError(
+                "Wrong coordinate dimension or coordinates outside physical domain"
+            )
         prediction = model(x, training=False).numpy()
         if not np.isfinite(prediction).all():
             raise ValueError("Nonfinite model prediction")
@@ -190,7 +206,9 @@ def release_validate_settings(settings, parent_settings=None):
             raise ValueError("Invalid positive integer: " + key)
     if not 0 < s["field_target"] <= 1 or not 0 < s["base_lr"] < 1:
         raise ValueError("field_target must be in (0,1]; base_lr must be in (0,1)")
-    if not 0 < s["initial_coefficient_ratio"] or not np.isfinite(s["initial_coefficient_ratio"]):
+    if not 0 < s["initial_coefficient_ratio"] or not np.isfinite(
+        s["initial_coefficient_ratio"]
+    ):
         raise ValueError("Initial coefficient ratio must be positive and finite")
     if not 0 <= s["sa_ema"] < 1:
         raise ValueError("SA EMA in [0,1)")
@@ -219,7 +237,12 @@ def release_validate_settings(settings, parent_settings=None):
         or s["ff_features_per_bank"] > 1024
         or any(
             s[k] > 250000
-            for k in ["collocation_count", "data_count", "initial_count", "boundary_count_per_face"]
+            for k in [
+                "collocation_count",
+                "data_count",
+                "initial_count",
+                "boundary_count_per_face",
+            ]
         )
     ):
         raise ValueError("Requested resources exceed explicit safety limits")
@@ -312,7 +335,9 @@ def release_training(root, settings, destination, parent=None, output_zip=None):
         },
     )
     output = (
-        Path(output_zip) if output_zip else destination.with_name(destination.name + "_latest.zip")
+        Path(output_zip)
+        if output_zip
+        else destination.with_name(destination.name + "_latest.zip")
     )
     rows = []
     run_status = "running"
@@ -419,7 +444,10 @@ def release_training(root, settings, destination, parent=None, output_zip=None):
         u_json(destination / "wiring.json", wiring)
         for arm in settings["arms"]:
             trial = (
-                destination / "candidates" / settings["equation"] / f"seed_{settings['seed']}_{arm}"
+                destination
+                / "candidates"
+                / settings["equation"]
+                / f"seed_{settings['seed']}_{arm}"
             )
             parent_trial = (
                 Path(parent["root"])
@@ -450,7 +478,9 @@ def release_services(root, use_llm=False, dense_rag=False):
 def release_evaluate(root, real_llm=False, dense_rag=False):
     from fastapi.testclient import TestClient
 
+    total_started = time.perf_counter()
     agent, app = release_services(root, use_llm=real_llm, dense_rag=dense_rag)
+    load_seconds = time.perf_counter() - total_started
     started = time.perf_counter()
     agent.force_llm = real_llm
     direct = un_evaluate(agent)
@@ -468,8 +498,14 @@ def release_evaluate(root, real_llm=False, dense_rag=False):
         "main": direct,
         "heldout": heldout,
         "api": api,
-        "passed": direct["passed"] and heldout["passed"] and api["passed"],
+        "passed": direct["passed"]
+        and heldout["passed"]
+        and api["passed"]
+        and api["natural_language_endpoint"],
         "seconds": time.perf_counter() - started,
+        "load_seconds": load_seconds,
+        "total_seconds": time.perf_counter() - total_started,
+        "timing_scope": "total includes service/model loading; seconds is evaluator body only",
         "training_executed": False,
     }
 
@@ -482,6 +518,9 @@ def release_training_check(root, scratch_base):
         s.update(arms=[arm], cap=2, lbfgs_maxiter=0)
         first = Path(scratch_base) / ("v3_probe_" + uuid.uuid4().hex[:8])
         release_training(root, s, first)
+        completed_zip = first.with_name(first.name + "_latest.zip")
+        restored = Path(scratch_base) / ("v3_probe_restore_" + uuid.uuid4().hex[:8])
+        release_open(completed_zip, restored)
         r = json.loads(
             (first / "candidates" / eq / f"seed_3234_{arm}" / "result.json").read_text(
                 encoding="utf-8"
@@ -489,7 +528,10 @@ def release_training_check(root, scratch_base):
         )
         second = Path(scratch_base) / ("v3_probe_resume_" + uuid.uuid4().hex[:8])
         release_training(
-            root, {**s, "execution": "resume", "cap": 3}, second, {"settings": s, "root": first}
+            root,
+            {**s, "execution": "resume", "cap": 3},
+            second,
+            {"settings": s, "root": restored},
         )
         q = json.loads(
             (second / "candidates" / eq / f"seed_3234_{arm}" / "result.json").read_text(
@@ -501,6 +543,8 @@ def release_training_check(root, scratch_base):
                 "equation": eq,
                 "new_updates": 2,
                 "additional_updates": 1,
+                "resumed_from_completed_boundary_zip": True,
+                "completed_zip_sha256": u_sha(completed_zip),
                 "passed": q["adam"]["iteration"] == 3
                 and q["heldout_sha256"] == r["heldout_sha256"],
             }
@@ -513,6 +557,78 @@ def release_training_check(root, scratch_base):
         "additional_disposable_wiring_probes": True,
         "scope": "Not trained trial performance",
     }
+
+
+def release_wave_checkpoint_state(ns, config, arm, seed, trial, normalization_root):
+    """Restore saved Wave state without requiring the old random initializer.
+
+    Saved calibration, cycle-0 training arrays, FF matrix, Adam field metrics
+    and coefficient must agree. No calibration is recomputed on a trained model.
+    New training still uses the strict initialization calibration path.
+    """
+    trial, normalization_root = Path(trial), Path(normalization_root)
+    report = json.loads((trial / "result.json").read_text(encoding="utf-8"))
+    if (report["arm"], report["sampling_seed"]) != (arm, seed):
+        raise ValueError("Wave checkpoint identity mismatch")
+    stored = json.loads((normalization_root / "normalization.json").read_text(encoding="utf-8"))
+    if stored["policy"] != ns["NORMALIZATION_POLICY"]:
+        raise ValueError("Wave normalization policy mismatch")
+    record = stored["seeds"][str(seed) + "_" + ns["W8_ARMS"][arm]["kind"]]
+    if record != report["loss_normalization"]:
+        raise ValueError("Wave calibration differs from saved Adam report")
+    arrays, _ = ns["training_lhs"](
+        ns["SOURCE_ARRAYS"], config, ns["PROTOCOL"], "volume_lhs", seed, 0
+    )
+    train = {k: v for k, v in arrays.items() if k.endswith("_train")}
+    if record["seed"] != seed or record["training_arrays_sha256"] != ns["arrays_digest"](train):
+        raise ValueError("Wave calibration training coordinates changed")
+    scales = record["group_scales"]
+    if (
+        set(scales) != set(ns["NORMALIZATION_POLICY"]["groups"])
+        or not np.isfinite(list(scales.values())).all()
+        or min(scales.values()) <= 0
+    ):
+        raise ValueError("Invalid saved Wave group scales")
+    if (
+        not np.isfinite([record["amplitude"], record["time_scale"]]).all()
+        or min(record["amplitude"], record["time_scale"]) <= 0
+    ):
+        raise ValueError("Invalid saved Wave physical scales")
+    old = ns["_cross_factory"](config, arm, seed)
+    model, variables, network = old[0], old[5], old[6]
+    model.loss_normalization = copy.deepcopy(record)
+    model.normalization_family = ns["W8_ARMS"][arm]["kind"]
+    tf = ns["tf"]
+    optimizer = tf.keras.optimizers.Adam(0.004)
+    optimizer.build(network)
+    optimizer.lambda_optimizer = tf.keras.optimizers.Adam(4e-6)
+    optimizer.lambda_optimizer.build([model.lambda_1])
+    factors = tf.Variable(np.ones(3, np.float32), trainable=False)
+    count = tf.Variable(0, dtype=tf.int64, trainable=False)
+    checkpoint = tf.train.Checkpoint(
+        model=model,
+        optimizer=optimizer,
+        lambda_optimizer=optimizer.lambda_optimizer,
+        factors=factors,
+        sa_updates=count,
+    )
+    state = (model, optimizer, factors, count, checkpoint, variables, network)
+    checkpoint.read(os.path.relpath(trial / "state", Path.cwd())).assert_consumed()
+    if int(optimizer.iterations.numpy()) != report["last"]["iteration"]:
+        raise ValueError("Wave restored optimizer iteration mismatch")
+    if ns["w8_ff_digest"](model) != report["ff_sha256"]:
+        raise ValueError("Wave restored FF matrix mismatch")
+    metrics = ns["field_metrics"](model, ns["SOURCE_ARRAYS"])
+    for key, value in metrics.items():
+        if not np.isclose(
+            value, report["last"]["reference_metrics"][key], rtol=1e-3, atol=1e-6
+        ):
+            raise ValueError("Wave restored Adam field metric mismatch: " + key)
+    if not np.isclose(
+        float(model.lambda_1.numpy()), report["last"]["lambda_1"], rtol=1e-6, atol=1e-7
+    ):
+        raise ValueError("Wave restored coefficient mismatch")
+    return state
 
 
 def release_wave_train(ns, root, destination, settings, parent, boundary, results):
@@ -531,7 +647,9 @@ def release_wave_train(ns, root, destination, settings, parent, boundary, result
         calibration = None
     if calibration and calibration.exists():
         (destination / "normalization.json").write_bytes(calibration.read_bytes())
-    ns["configure_normalization"](destination, config, arrays, protocol, allow_new=not bool(parent))
+    ns["configure_normalization"](
+        destination, config, arrays, protocol, allow_new=not bool(parent)
+    )
     ns["CROSS_POLICY"]["target"] = settings["field_target"]
     ns["cross_lr"] = lambda completed: tuple(
         float(np.interp(completed, settings["lr_knots"], settings[k]) * settings["base_lr"])
@@ -554,7 +672,8 @@ def release_wave_train(ns, root, destination, settings, parent, boundary, result
                 for a, b in zip(eligible, eligible[1:])
             )
             and all(
-                r["validation_metrics"]["relative_l2"] <= settings["field_target"] for r in eligible
+                r["validation_metrics"]["relative_l2"] <= settings["field_target"]
+                for r in eligible
             )
         )
 
@@ -564,8 +683,7 @@ def release_wave_train(ns, root, destination, settings, parent, boundary, result
     for arm in settings["arms"]:
         seed = settings["seed"]
         trial = destination / "trials" / f"seed_{seed}_{arm}"
-        state = ns["w8_make_state"](config, arm, seed)
-        initial_digest = ns["w8_model_digest"](state[0])
+        state = None
         first = 1
         history = []
         sampling = []
@@ -574,13 +692,18 @@ def release_wave_train(ns, root, destination, settings, parent, boundary, result
             previous = json.loads((previous_root / "result.json").read_text(encoding="utf-8"))
             if (previous["arm"], previous["sampling_seed"]) != (arm, seed):
                 raise ValueError("Wave resume identity mismatch")
-            state[4].read(str(previous_root / "state")).assert_consumed()
+            state = release_wave_checkpoint_state(
+                ns, config, arm, seed, previous_root, parent["root"]
+            )
+            initial_digest = previous["initialization_sha256"]
             first = previous["last"]["iteration"] + 1
             history = list(previous["history"])
             sampling = list(previous["sampling"])
             if first > settings["cap"]:
                 raise ValueError("Total cap must exceed parent iteration")
         else:
+            state = ns["w8_make_state"](config, arm, seed)
+            initial_digest = ns["w8_model_digest"](state[0])
             state[0].lambda_1.assign(settings["initial_coefficient_ratio"])
         trial.mkdir(parents=True)
         step = ns["cross_stepper"](state)
@@ -619,6 +742,11 @@ def release_wave_train(ns, root, destination, settings, parent, boundary, result
                 ns["cross_sa"](state, data)
             if it % settings["stop_every"] == 0 or it == settings["cap"]:
                 row = ns["cross_row"](state, selected, arrays, arm, it)
+                row["factors"] = state[2].numpy().tolist()
+                row["next_lrs"] = list(ns["cross_lr"](it))
+                row["next_group_weights"] = ns["cross_groups"](
+                    arm, it, state[2].numpy()
+                ).tolist()
                 row["elapsed_seconds"] = time.perf_counter() - started
                 history.append(row)
                 row["target_reached"] = target(history)
@@ -642,9 +770,17 @@ def release_wave_train(ns, root, destination, settings, parent, boundary, result
         post = destination / "postprocess/trials" / f"seed_{seed}_{arm}"
         ns["LB_POLICY"]["refine_iterations"] = settings["lbfgs_maxiter"]
         if settings["lbfgs_maxiter"] > 0:
-            result = ns["lb_trial"](
-                post, trial, config, arrays, protocol, arm, seed, settings["cap"], "refine"
+            previous_factory = ns["set_wave_state_factory"](
+                lambda cfg, method, sampling_seed: release_wave_checkpoint_state(
+                    ns, cfg, method, sampling_seed, trial, destination
+                )
             )
+            try:
+                result = ns["lb_trial"](
+                    post, trial, config, arrays, protocol, arm, seed, settings["cap"], "refine"
+                )
+            finally:
+                ns["set_wave_state_factory"](previous_factory)
         else:
             post.mkdir(parents=True)
             (post / "selected.weights.h5").write_bytes((trial / "last.weights.h5").read_bytes())

@@ -1,67 +1,67 @@
 {
-  "archive": "passed",
+  "revision": "korean-panel-v1",
   "distinct_trials": 65,
   "equations": 9,
-  "default_notebook_run_all": "passed",
-  "saved_model_predictions": "passed",
-  "rules_and_api": "passed",
-  "main_questions": 30,
-  "independent_paraphrases": 15,
-  "actual_llm_system": "passed",
-  "llm_mock_used": false,
-  "standalone_llm_verified": false,
-  "planner_agreed": 26,
-  "actual_generation_calls": 42,
-  "controller_fallbacks": 16,
-  "hybrid_rag": "passed",
-  "checkpoint_new_resume_behavior": "not_run_windows_unicode_checkpoint_limitation",
-  "additional_training_validation": "Colab ACTION=evaluate, CHECK_TRAINING=True; six disposable updates",
-  "github": "deployment_candidate_prepared_owner_write_verified",
-  "deployment_branch": "codex/v3-complete-distribution",
-  "deployment_runtime_verification": "pending",
-  "previous_checks_scope": "Historical evidence from the pre-text-review source; not fresh execution qualification.",
-  "source_text_review": {
-    "scope": "한국어 사용자 안내·보고서·파일명 정리. 보고서 표시를 제외한 수치 집계와 학습 코드는 보존. 모델 실행 검증 아님.",
-    "python_files_reviewed": 12,
-    "syntax_compilation": "passed",
-    "numerical_ast_unchanged": {
-      "candidate_runtime.py": true,
-      "wave_inference.py": true,
-      "wave_runtime.py": true,
-      "equations.py": true,
-      "contracts.py": true
+  "archive": "passed",
+  "checks": {
+    "actual_llm.json": {
+      "passed": true,
+      "source_scope": "imported_historical",
+      "sha256": "0c8803ff25d9f2f337014c259ca0ad98f0c6ffbbc9c02a05196306a6b0f532ba"
     },
-    "report_presentation_excluded_from_ast_comparison": true,
-    "planner_and_hybrid_rag_source_byte_unchanged": {
-      "services.py": true,
-      "natural_language.py": true
+    "hybrid_rag.json": {
+      "passed": true,
+      "source_scope": "imported_historical",
+      "sha256": "0db785a2aee6184a0b79417d17127457a68f334213b02c3c4fefae4e6683863a"
     },
-    "runtime_verification": "pending",
-    "training_executed": false,
-    "changes": [
-      "사용자 안내와 비교 보고서를 한국어로 정리",
-      "실행 노트북·결과·검증·소스의 정식 파일명을 분리",
-      "개인 작업 메모와 승격 절차를 개발자 문서로 분리",
-      "보고서 수치 집계·학습 일정·샘플링·언어 모델 및 검색 소스 보존"
-    ],
-    "files_sha256": {
-      "__init__.py": "2cf2f471c0846a747d7c266c5afdfc1403bb2dd45e62591c68d6e0ad20a38c7f",
-      "__main__.py": "ce726187a495a42ac6c6cbccf98695dedecb384bff475ae19e92b27c96033086",
-      "candidate_runtime.py": "9266876a46199393a74f9319aec7670c87923ca22f389694334bbfb0675260e7",
-      "colab_config.py": "bc7b13ab0cd801b046d26f2645342293b37363ff8f4bdd3364a6e5e760dc7d77",
-      "colab_entry.py": "e76eb9b59e282745f71e62ae390bc22f3b1a203671dc52a09c71247c9a2129ad",
-      "contracts.py": "ae09d07ddb8035f91d8b0678ea30c917c6b3312110bcfc56ca163fa52aa0e710",
-      "distribution.py": "5ca69b8cdae68315c240a07f5f55822eaee81d0bf3f6fa180160bf0ad30098bf",
-      "equations.py": "1a29b5226343df9bc8bdaca6fcb0920b1342cec23a4326ccaa070a8a3a3984a8",
-      "natural_language.py": "15cd1880d8dc231289bbdd654973a328a4fb5fe6631566666bace895bb29839d",
-      "services.py": "fc017805d7226d4f00cbbc9b578b187e2ac4d127d94479d129e8d162e3b2c37d",
-      "wave_inference.py": "c9e7733aeb358be5baa26166b0e76b411388f1508bbef362befde103a1f5cfec",
-      "wave_runtime.py": "5b9184ad5d87a325bc76d1b9b9e935b6eb701d83096c7753556e37a021404263"
+    "llm_intent_baseline.json": {
+      "passed": null,
+      "source_scope": "imported_historical",
+      "sha256": "4bc81537d942499ea2f57bc38a15e2a67765bda7db77b1b6b8b0f9b62bde37de"
+    },
+    "llm_plan_baseline.json": {
+      "passed": null,
+      "source_scope": "imported_historical",
+      "sha256": "442de393344a0487fec14152f46be4edcc336498ac26d1a267b7f1e2bca599d7"
+    },
+    "local_verification.json": {
+      "passed": null,
+      "source_scope": "imported_historical",
+      "sha256": "694559fe0cdb7d1730575e3a2513ba632423cf5cefa2d01804512a898a4e2b5e"
+    },
+    "patch_local.json": {
+      "passed": false,
+      "source_scope": "current_local_patch",
+      "sha256": "53caa8dbc33b5debda07c7294900a756e8c74c6624840fd60a1ca3471bf4b4ea"
+    },
+    "rules_api.json": {
+      "passed": true,
+      "source_scope": "imported_historical",
+      "sha256": "14b1097624a5ac712ada62f42f89e06a8bb39214482c274a569fa75f01c8ac85"
+    },
+    "source_text_review.json": {
+      "passed": null,
+      "source_scope": "imported_historical",
+      "sha256": "fd6431c4ac305312b6520d527791fd8b4c2021150faf8ae8fa44c1102d0e99de"
+    },
+    "status.json": {
+      "passed": null,
+      "source_scope": "imported_historical",
+      "sha256": "4cd3e8bfb4c90abf6fac7367eace43b8c82575c588cd63146489a4003ac289e0"
+    },
+    "training_settings.json": {
+      "passed": null,
+      "source_scope": "imported_historical",
+      "sha256": "24700557841f4f91027ba9061dd0af488718d3a4161b899a5e47d8efa519db3b"
+    },
+    "wave_handoff_local.json": {
+      "passed": true,
+      "source_scope": "current_local_patch",
+      "sha256": "9018e1280b6ab5c300cecac9a99f60cf52396a3d89777dc01c863adc1498f5c6"
     }
   },
+  "colab_frontend_current_revision": "not_run",
   "main_promoted": false,
   "overall_physics_approved": false,
-  "distribution_language": "ko",
-  "distribution_notebook": "Online_PINN_PDE_Framework_V3.ipynb",
-  "distribution_results": "Online_PINN_PDE_Framework_V3_Results.zip"
+  "imported_history_not_fresh_validation": true
 }

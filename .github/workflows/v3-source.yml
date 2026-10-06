@@ -13,7 +13,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m compileall -q v3
-      - run: pip install numpy
+      - run: pip install numpy ipywidgets
       - name: Results definitions do not import TensorFlow
         run: |
           python - <<'PY'
@@ -22,4 +22,6 @@ jobs:
           ns = context()
           assert 'tensorflow' not in sys.modules
           assert ns['release_settings']('poisson2d')['base_lr'] == 0.004
+          request = ns['release_request']({'action': 'results', 'zip': 'V3_Results.zip', 'training_enabled': True})
+          assert request == {'action': 'results', 'zip': 'V3_Results.zip'}
           PY
