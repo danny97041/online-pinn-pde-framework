@@ -49,6 +49,7 @@ Git 버전·노트북 셀·출력·배포 문서의 점검 범위와 현재 소�
 python tools/review_v3_source.py --baseline-zip V3_Check_7a4c0860.zip
 python tools/sync_v3_notebook.py
 python tools/test_v3_interface.py --bundle V3_Results.zip
+python tools/test_v3_services.py --bundle V3_Results.zip --numerical
 python tools/package_v3.py --evidence-zip V3_Check_7a4c0860.zip --validation-zip V3_Check_1b70d87f.zip
 ```
 

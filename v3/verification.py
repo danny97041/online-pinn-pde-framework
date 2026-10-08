@@ -258,6 +258,7 @@ def release_inspection(root, scratch_base, request):
             request["use_llm"],
             request["dense_rag"],
             request.get("custom_questions", []),
+            request.get("dense_backend", "numpy"),
         )
     }
     if request["check_models"]:

@@ -1,5 +1,5 @@
 {
-  "revision": "publication-clean-v5",
+  "revision": "v3-service-extensions-1",
   "distinct_trials": 65,
   "equations": 9,
   "archive": "passed",
@@ -12,12 +12,12 @@
     "current.json": {
       "passed": true,
       "source_scope": "imported_historical",
-      "sha256": "cfffd0d30c03eb0be51676a561fe35275eab065a95f6f5697b9049f4eb93859d"
+      "sha256": "b97c6086ea6a15050ab240af41511c1a3e06677d7174911390facea3f1704bc0"
     },
     "form_local.json": {
       "passed": true,
       "source_scope": "current_local_form",
-      "sha256": "6d5c159dd1d1d95f923eccbc0729946397528023ef7f825e3af2750d0c493d36"
+      "sha256": "4ceef5d13ff75fc8d43b3a64d8c151678577c5efde95bab0f3c861ad2dfc41c9"
     },
     "hybrid_rag.json": {
       "passed": true,
@@ -42,27 +42,32 @@
     "publication_current_local.json": {
       "passed": true,
       "source_scope": "current_local_form",
-      "sha256": "441da0139921268794253ed88711b192ea64377ee9fa4e1262c6d8766eab54ce"
+      "sha256": "51b9baf6ca85f98bdb504bee6098c21994a4601983ca000b6aca3fbb40e1f8fb"
     },
     "rules_api.json": {
       "passed": true,
       "source_scope": "imported_historical",
       "sha256": "14b1097624a5ac712ada62f42f89e06a8bb39214482c274a569fa75f01c8ac85"
     },
+    "service_local.json": {
+      "passed": true,
+      "source_scope": "current_local_form",
+      "sha256": "6882b9bfea5d3a3061e7d9bc99fd51281cf89ee3f6671bd1a248889aebbf7f16"
+    },
     "source_current_local.json": {
       "passed": null,
       "source_scope": "current_local_form",
-      "sha256": "172b2b898f9e087f8fd28420d9c0420cade039af21a28b1ddde3dc4261375520"
+      "sha256": "f61edeb7e88e5d8f3c17bfa53479c36d08c9858bf786948234dee051b7dbf00c"
     },
     "status.json": {
       "passed": null,
       "source_scope": "imported_historical",
-      "sha256": "f16493b9ecad223fcda58f16e1d62928a9aef06727dee37c724b4cddbec35264"
+      "sha256": "f2168fe93dca8ca497ab0bb15f8d995c1130b5cfce4612dba44450b730f6326e"
     },
     "submitted_colab_audit.json": {
       "passed": true,
       "source_scope": "imported_historical",
-      "sha256": "90408af315fa722d4522f6a3bf2219fcaa86711b32237bc4a82f7255fcc37228"
+      "sha256": "01ab47b1566a9953cedab460fa2bc0bf8e8eb4953b75633088afdc7bef187b3e"
     },
     "training_settings.json": {
       "passed": null,
@@ -80,45 +85,32 @@
   "imported_history_not_fresh_validation": true,
   "submitted_colab_runs": [
     {
-      "filename": "V3_Check_7a4c0860.zip",
-      "sha256": "eceecb27ceeb6d72771a984913fa8702fd878e1787f2380c47b74350995ac129",
-      "latest_run": "validation/runs/0bacdb8c.json",
+      "filename": "V3_Check.zip",
+      "sha256": "a02678dd24f03efb83db7e2da4ad5418517eedcda3bbd0fbeea356746db4e442",
+      "latest_run": "validation/runs/9f88d997.json",
       "passed": true,
-      "revision": "auto-storage-connect-v3",
+      "revision": "concise-comparison-v3",
       "source_hashes": {
-        "contracts.py": "ae09d07ddb8035f91d8b0678ea30c917c6b3312110bcfc56ca163fa52aa0e710",
-        "equations.py": "1a29b5226343df9bc8bdaca6fcb0920b1342cec23a4326ccaa070a8a3a3984a8",
-        "natural_language.py": "705e85c19c7fc84f266217352c8eee8c7758aae94655f2cad9b4ae0e3795a87e",
-        "services.py": "fc017805d7226d4f00cbbc9b578b187e2ac4d127d94479d129e8d162e3b2c37d",
-        "distribution.py": "7648a98aa038e1fbd01884a465af06265e7c1cf87373dceab073444a4fea391c",
-        "candidate_runtime.py": "9266876a46199393a74f9319aec7670c87923ca22f389694334bbfb0675260e7",
-        "wave_inference.py": "c9e7733aeb358be5baa26166b0e76b411388f1508bbef362befde103a1f5cfec",
-        "wave_runtime.py": "c7af4b8be0e01535e79c842c4152fbe88bf58e4699a5c01b7832e1090bf50d72",
-        "verification.py": "85d34c8ce9c2653da15a602d5f62f0c717b27f8599f3dd5e62e12d54d9c95d2e",
-        "session.py": "b632d0a596e91c4f191f415cf7c2769aa8f962671e8c0b68b00bbf40ae35f392",
-        "interface.py": "a11bed8096e4da7ba0e18abd1519def534e7ea49e31a417457fd843220b4b0b4"
-      }
-    },
-    {
-      "filename": "V3_Check_1b70d87f.zip",
-      "sha256": "6ad10ab131e693f46f9685e1b97d202b63bf4bede5d715b0342a3ce0d85ed2e2",
-      "latest_run": "validation/runs/1b124c59.json",
-      "passed": true,
-      "revision": "auto-storage-connect-v3",
-      "source_hashes": {
-        "contracts.py": "ae09d07ddb8035f91d8b0678ea30c917c6b3312110bcfc56ca163fa52aa0e710",
-        "equations.py": "1a29b5226343df9bc8bdaca6fcb0920b1342cec23a4326ccaa070a8a3a3984a8",
-        "natural_language.py": "705e85c19c7fc84f266217352c8eee8c7758aae94655f2cad9b4ae0e3795a87e",
-        "services.py": "fc017805d7226d4f00cbbc9b578b187e2ac4d127d94479d129e8d162e3b2c37d",
-        "distribution.py": "7648a98aa038e1fbd01884a465af06265e7c1cf87373dceab073444a4fea391c",
-        "candidate_runtime.py": "9266876a46199393a74f9319aec7670c87923ca22f389694334bbfb0675260e7",
-        "wave_inference.py": "c9e7733aeb358be5baa26166b0e76b411388f1508bbef362befde103a1f5cfec",
-        "wave_runtime.py": "c7af4b8be0e01535e79c842c4152fbe88bf58e4699a5c01b7832e1090bf50d72",
-        "verification.py": "85d34c8ce9c2653da15a602d5f62f0c717b27f8599f3dd5e62e12d54d9c95d2e",
-        "session.py": "b632d0a596e91c4f191f415cf7c2769aa8f962671e8c0b68b00bbf40ae35f392",
-        "interface.py": "a11bed8096e4da7ba0e18abd1519def534e7ea49e31a417457fd843220b4b0b4"
+        "contracts.py": "200aa5a78ec9457b1b6a1d8e31b6b6e1726e099ef3cb467a3d3de88a012c51b1",
+        "equations.py": "0c3a5f990c949845c7cf93acb03e09cdf7b8b4c957a7932372cae204c8b7828a",
+        "natural_language.py": "193ea61f58c40f2f97dce0bfda69bed235e6604951fc0f70fb308fdb9afbb26f",
+        "services.py": "b24ace73a7dbc202cbeccdd341587e23c71290f8d1f6446a824409c808e5d2c8",
+        "model_registry.py": "7c2ffcfa08162346ac2f8aa6d58219886de2ceda40c55de87ec2fc12e49c388a",
+        "api_schemas.py": "e2b7c5a4907543b0d68bf4e8a99cc01e3ee02434ef9bab3c85287c51c429379c",
+        "api_services.py": "5e2c451d264aff18cfc803d9269da8f3d7d076c397dccdfebdf4a9a81a6a1992",
+        "api_routes.py": "2c1b3503b48524c919ed82f6fe7b734d1ead31cdfb3fd172b5378b4dfea8769c",
+        "documents.py": "a6e2473d8982a9fd86cd176a8dd0960c4b630f32970c0e0e3c7cd17aaeb772d9",
+        "visualization.py": "25d13a57b7870cefd69daeb83cc6cb41f514bb7835a4e64e829a8853e556d0e9",
+        "distribution.py": "ac6e40add13feed793e1a3fcfab5f825971f49e6a7aa95c08e0759dbfea0a371",
+        "benchmark.py": "8874d3fa3d66eb2c6e65aae8557d4591972271c8bd1de7ec4e3cac3a7a884210",
+        "candidate_runtime.py": "0706c513d0ba834df0c524626d8845d8ae7d1868a354ddd44a2464fcc41da1cf",
+        "wave_inference.py": "8f829a14e2dfcb1d61f68bc69551c83716047fa052de60ced21aae17dc039940",
+        "wave_runtime.py": "08a757eff079dc52913bb29c0aa4995ef860cbf4ad927419fc08515b2aa1d62e",
+        "verification.py": "e951d06f7c13fb9685053ce7548c09ed6c939ce881273aa4921ee303f9e4a5b5",
+        "session.py": "4621b8a12d8f9c4cd521f1931916405cf05a0639c4fcd0ba8ff692f4cf9ff554",
+        "interface.py": "c08815214b139473d47acf511292b737c94ee1db2478a2593d71b84b81cf6b20"
       }
     }
   ],
-  "current_edit_scope": "Documentation and package metadata only; numerical experiment payloads and executed validation fingerprints unchanged"
+  "current_edit_scope": "Service API, registry, generated documents, visualization, optional FAISS and four-seed orchestration; saved experiment payloads and historical executed validation fingerprints unchanged"
 }

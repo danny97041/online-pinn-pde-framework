@@ -27,22 +27,16 @@ NUMERICAL_MODULES = [
 # Contract identifiers, hashes, equations and schedules still compare verbatim.
 DESCRIPTION_REPLACEMENTS = {
     "wave_runtime.py": {
-        "Explicit five-method Stage 8 experiment configuration":
-            "9e3deb587e677ab111b58a3929ac3bb5f5c829c0100313b98cc05326cce2251c",
-        "Historical exploratory setting 0.004; literature provenance not independently verified":
-            "595f411135c77abb2c249169a4bb3a5050139ad2ff66e97e4fc230207baf9b12",
+        "Explicit five-method Stage 8 experiment configuration": "9e3deb587e677ab111b58a3929ac3bb5f5c829c0100313b98cc05326cce2251c",
+        "Historical exploratory setting 0.004; literature provenance not independently verified": "595f411135c77abb2c249169a4bb3a5050139ad2ff66e97e4fc230207baf9b12",
     },
     "wave_inference.py": {
-        "Post-hoc synthetic Wave residual and reference-field audit":
-            "5ae63beb5ab7d9fe8ee69960470c92df5b295dfa10245a364c6f14b966224eae",
-        "Residual statistics describe the fixed diagnostic points, not every point in the domain.":
-            "8d67611311143c180d3cd92cb765b2d5b6470b5803ed9e13ac8e9696795b55cf",
+        "Post-hoc synthetic Wave residual and reference-field audit": "5ae63beb5ab7d9fe8ee69960470c92df5b295dfa10245a364c6f14b966224eae",
+        "Residual statistics describe the fixed diagnostic points, not every point in the domain.": "8d67611311143c180d3cd92cb765b2d5b6470b5803ed9e13ac8e9696795b55cf",
     },
     "services.py": {
-        "In-process API/agent allowlist and schema regression":
-            "f5c8ecd65dd98ebfae95ac115835ff3c9d93266f6028877402576c4c8bcd2087",
-        "Stored-model inference: finite, repeated and single/batch predictions":
-            "d00f180275aa2820de3e4a7b0f56bb17a579467925685aebba8b8949c8dbe5a5",
+        "In-process API/agent allowlist and schema regression": "f5c8ecd65dd98ebfae95ac115835ff3c9d93266f6028877402576c4c8bcd2087",
+        "Stored-model inference: finite, repeated and single/batch predictions": "d00f180275aa2820de3e4a7b0f56bb17a579467925685aebba8b8949c8dbe5a5",
     },
 }
 
@@ -114,11 +108,18 @@ def main(baseline_zip):
         for name in NUMERICAL_MODULES:
             old = archive.read("source_snapshot/" + name).decode("utf-8")
             new = (ROOT / "v3" / name).read_text(encoding="utf-8")
-            equivalence[name] = computational_ast(old, name) == computational_ast(new, name)
+            equivalence[name] = computational_ast(old, name) == computational_ast(
+                new, name
+            )
         for name in ["services.py", "natural_language.py"]:
-            unchanged_planner[name] = (
-                ast.dump(source_ast(archive.read("source_snapshot/" + name).decode("utf-8"), name), include_attributes=False)
-                == ast.dump(source_ast((ROOT / "v3" / name).read_text(encoding="utf-8"), name), include_attributes=False)
+            unchanged_planner[name] = ast.dump(
+                source_ast(
+                    archive.read("source_snapshot/" + name).decode("utf-8"), name
+                ),
+                include_attributes=False,
+            ) == ast.dump(
+                source_ast((ROOT / "v3" / name).read_text(encoding="utf-8"), name),
+                include_attributes=False,
             )
     assert all(equivalence.values()), equivalence
     # Natural-language presentation is intentionally extended in this revision.
@@ -148,7 +149,7 @@ def main(baseline_zip):
         )
         for name in protected_nl
     }
-    assert unchanged_planner["services.py"] and all(intent_equivalence.values())
+    assert all(intent_equivalence.values())
     for path in FILES:
         compile(path.read_text(encoding="utf-8"), str(path), "exec")
     report = {
@@ -166,6 +167,9 @@ def main(baseline_zip):
         "runtime_verification": "recorded_separately",
         "training_executed": False,
         "changes": [
+            "API 스키마·라우터·서비스·모델 등록 분리, 명시적 추론 모델 지정·되돌리기 추가",
+            "기술보고서·기능 목록 생성 및 검색 재색인, 저장 결과 시각화 추가",
+            "NumPy 기본 검색 유지, 선택형 FAISS 내적 검색 및 4시드 순차 실행 추가",
             "일반 비교 답변과 보고서의 반복 안내 축약; 필요한 질문의 확인·추가 설명은 유지",
             "상단 최초 기능·파일 위치 선택, 60초 무입력 기본 조회와 하단 설정 연동",
             "사용자 안내와 비교 보고서를 한국어로 정리",
@@ -175,7 +179,7 @@ def main(baseline_zip):
             "결과·검사·학습 ZIP 파일명을 단순화하고 긴 이름 입력도 지원",
             "모델 전수·Wave 재개·LHS 경계 검사를 선택 실행으로 통합",
             "사용 안내와 유지관리 문서를 분리",
-            "보고서 수치 집계·학습 일정·샘플링·Qwen 의도 판단·검색 경로 보존; 자연어 응답 표현과 추가 시험 기록은 변경",
+            "핵심 학습·샘플링·Qwen 의도 함수 보존; 서비스·검색 선택 기능은 독립 실행 검사로 확인",
             "Colab 브라우저 콜백 타이머와 하단 안전 기본 조회 버튼 추가; 일반 노트북의 커널 타이머는 유지",
             "자동 파일 위치에서 연결된 Drive·로컬 ZIP이 없을 때 연결 1회 시도; 화면 버전 안내 문구 제거",
             "실험 설명을 일반 배포 문구로 정리하고 검사 범위를 간결하게 표시",

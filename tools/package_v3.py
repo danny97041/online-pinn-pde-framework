@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 
-def main(evidence_zip, validation_zips=()):
+def main(evidence_zip, validation_zips=(), include_plots=False):
     from v3 import context
 
     ns = context()
@@ -41,6 +41,8 @@ def main(evidence_zip, validation_zips=()):
         "README.md",
         "REPORT.md",
         "docs/V3_COLAB_TEST_PLAN.md",
+        "docs/V3_RELEASE_CHECKLIST.md",
+        "docs/V3_RELEASE_NOTES.md",
         "provenance/distribution_source.json",
         "provenance/validation_imports.json",
         "validation/status.json",
@@ -50,6 +52,12 @@ def main(evidence_zip, validation_zips=()):
         "validation/form_local.json",
         "validation/source_current_local.json",
         "validation/submitted_colab_audit.json",
+        "validation/service_local.json",
+        "validation/publication_current_local.json",
+        "generated_documents/technical_report.md",
+        "generated_documents/feature_catalog.md",
+        "generated_documents/manifest.json",
+        "docs/V4_RESEARCH_PLAN.md",
     }
     excluded_prefixes = (
         "provenance/source_history/",
@@ -79,7 +87,7 @@ def main(evidence_zip, validation_zips=()):
         for name, digest in originals.items()
         if name not in {"unified_manifest.json", "README.md", "REPORT.md"}
         and not name.startswith(
-            ("source_snapshot/", "provenance/", "validation/", "docs/")
+            ("source_snapshot/", "provenance/", "validation/", "docs/", "generated_documents/")
         )
     }
     for bundle in [baseline, *map(Path, validation_zips)]:
@@ -123,8 +131,11 @@ def main(evidence_zip, validation_zips=()):
         expected_digests = {item["sha256"] for item in imported}
         if {item["sha256"] for item in audit_value["archives"]} != expected_digests:
             raise ValueError("The submitted audit does not match the packaging inputs")
-        audit_value["executed_source_notebook"]["included_in_distribution"] = False
-        audit_value["executed_source_notebook"]["availability"] = "Fingerprint only; superseded source snapshot excluded"
+        if audit_value.get("executed_source_notebook"):
+            audit_value["executed_source_notebook"]["included_in_distribution"] = False
+            audit_value["executed_source_notebook"][
+                "availability"
+            ] = "Fingerprint only; superseded source snapshot excluded"
         ns["u_json"](data / "validation/submitted_colab_audit.json", audit_value)
         notebook_record = audit_value.get("executed_source_notebook")
         if notebook_record:
@@ -136,11 +147,15 @@ def main(evidence_zip, validation_zips=()):
         shutil.copyfile(path, original_source / path.name)
     shutil.copyfile(ROOT / "v3/README.md", data / "README.md")
     ns["u_report_markdown"](data, summary["aggregate"])
+    ns["v3_generate_documents"](data)
+    if include_plots:
+        for equation in sorted({r["equation"] for r in summary["rows"]}):
+            ns["v3_visualize"](data, equation, "baseline", 3234)
     (data / "docs").mkdir(exist_ok=True)
     shutil.copyfile(
         ROOT / "docs/V3_COLAB_TEST_PLAN.md", data / "docs/V3_COLAB_TEST_PLAN.md"
     )
-    for name in ["V3_RELEASE_CHECKLIST.md", "V3_RELEASE_NOTES.md"]:
+    for name in ["V3_RELEASE_CHECKLIST.md", "V3_RELEASE_NOTES.md", "V4_RESEARCH_PLAN.md"]:
         shutil.copyfile(ROOT / "docs" / name, data / "docs" / name)
     notebook = output / "Online_PINN_PDE_Framework_V3.ipynb"
     ns["u_json"](
@@ -175,12 +190,17 @@ def main(evidence_zip, validation_zips=()):
     form_check = output / "V3_Form_Verification.json"
     if form_check.exists():
         shutil.copyfile(form_check, data / "validation/form_local.json")
+    service_check = output / "V3_Service_Verification.json"
+    if service_check.exists():
+        shutil.copyfile(service_check, data / "validation/service_local.json")
     source_review = output / "V3_Source_Text_Review.json"
     if source_review.exists():
         shutil.copyfile(source_review, data / "validation/source_current_local.json")
     publication_review = output / "V3_Publication_Review.json"
     if publication_review.exists():
-        shutil.copyfile(publication_review, data / "validation/publication_current_local.json")
+        shutil.copyfile(
+            publication_review, data / "validation/publication_current_local.json"
+        )
     checks = {}
     for path in (data / "validation").glob("*.json"):
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -188,7 +208,13 @@ def main(evidence_zip, validation_zips=()):
             "passed": value.get("passed"),
             "source_scope": (
                 "current_local_form"
-                if path.name in {"form_local.json", "source_current_local.json", "publication_current_local.json"}
+                if path.name
+                in {
+                    "form_local.json",
+                    "source_current_local.json",
+                    "publication_current_local.json",
+                    "service_local.json",
+                }
                 else (
                     "previous_local_patch"
                     if path.name in {"patch_local.json", "wave_handoff_local.json"}
@@ -198,7 +224,7 @@ def main(evidence_zip, validation_zips=()):
             "sha256": ns["u_sha"](path),
         }
     status = {
-        "revision": "publication-clean-v5",
+        "revision": "v3-service-extensions-1",
         "distinct_trials": 65,
         "equations": 9,
         "archive": "passed",
@@ -207,7 +233,7 @@ def main(evidence_zip, validation_zips=()):
         "overall_physics_approved": False,
         "imported_history_not_fresh_validation": True,
         "submitted_colab_runs": imported,
-        "current_edit_scope": "Documentation and package metadata only; numerical experiment payloads and executed validation fingerprints unchanged",
+        "current_edit_scope": "Service API, registry, generated documents, visualization, optional FAISS and four-seed orchestration; saved experiment payloads and historical executed validation fingerprints unchanged",
     }
     ns["u_json"](data / "validation/status.json", status)
     ns["u_json"](
@@ -257,6 +283,7 @@ def main(evidence_zip, validation_zips=()):
         ROOT / "docs/V3_RELEASE_CHECKLIST.md",
         ROOT / "docs/V3_COLAB_TEST_PLAN.md",
         ROOT / "docs/V3_RELEASE_NOTES.md",
+        ROOT / "docs/V4_RESEARCH_PLAN.md",
         ROOT / ".github/workflows/v3-source.yml",
     ]
     if publication_review.exists():
@@ -271,6 +298,7 @@ def main(evidence_zip, validation_zips=()):
             "audit_v3_checks.py",
             "prepare_v3_publish.py",
             "test_v3_wave_handoff.py",
+            "test_v3_services.py",
         ]
     ]
     with zipfile.ZipFile(output / "V3_Source.zip", "w", zipfile.ZIP_DEFLATED) as z:
@@ -309,5 +337,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--evidence-zip", required=True)
     parser.add_argument("--validation-zip", action="append", default=[])
+    parser.add_argument("--include-plots", action="store_true")
     args = parser.parse_args()
-    main(args.evidence_zip, args.validation_zip)
+    main(args.evidence_zip, args.validation_zip, args.include_plots)

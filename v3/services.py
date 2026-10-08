@@ -19,6 +19,10 @@ def us_chunks(root):
     paths += sorted((root / "routes").glob("*.json"))
     paths += sorted((root / "candidates").glob("*/*/result.json"))
     paths += [root / "README.md", root / "contract.json"]
+    paths += [
+        root / "generated_documents" / name
+        for name in ["technical_report.md", "feature_catalog.md"]
+    ]
     for path in paths:
         if not path.is_file():
             continue
@@ -139,7 +143,20 @@ def us_tokens(text):
 
 
 class UnifiedRAG:
-    def __init__(self, root, dense=False):
+    def __init__(self, root, dense=False, dense_backend="numpy"):
+        if dense_backend not in {"numpy", "faiss"}:
+            raise ValueError("Dense backend must be numpy or faiss")
+        self.dense = bool(dense)
+        self.dense_backend = dense_backend if dense else "numpy"
+        self.faiss_index = None
+        faiss = None
+        if dense and dense_backend == "faiss":
+            try:
+                import faiss
+            except ImportError as exc:
+                raise RuntimeError(
+                    "선택한 FAISS 검색을 실행하려면 별도 코드 셀에서 %pip install -q faiss-cpu 를 실행하세요. 설치 후 같은 기능을 다시 실행하면 됩니다. 설치하지 않으려면 임베딩 검색 엔진을 NumPy (기본)로 변경하세요."
+                ) from exc
         self.root = Path(root)
         self.semantic_weight = 0.6
         self.keyword_weight = 0.4
@@ -227,11 +244,21 @@ class UnifiedRAG:
                     "source_document_coverage": True,
                 },
             )
+        if faiss is not None:
+            self.faiss_index = faiss.IndexFlatIP(self.matrix.shape[1])
+            self.faiss_index.add(np.ascontiguousarray(self.matrix, dtype=np.float32))
         self.backend = (
-            "BM25 + multilingual-e5-small exact inner product + weighted RRF (V1/V2 0.6/0.4, k=60)"
+            "BM25 + multilingual-e5-small "
+            + ("FAISS IndexFlatIP" if faiss is not None else "exact inner product")
+            + " + weighted RRF (V1/V2 0.6/0.4, k=60)"
             if dense
             else "BM25 only (explicit lightweight fallback)"
         )
+
+    def reindex(self):
+        """Refresh generated documents while reusing content-hashed E5 vectors."""
+        fresh = type(self)(self.root, self.dense, self.dense_backend)
+        self.__dict__.update(fresh.__dict__)
 
     def search(self, query, k=5):
         if not isinstance(query, str) or not query.strip() or len(query) > 2000:
@@ -288,7 +315,17 @@ class UnifiedRAG:
             v = self.encoder.encode(
                 ["query: " + query], normalize_embeddings=True, show_progress_bar=False
             )[0]
-            order = np.argsort(-(self.matrix @ v), kind="stable")
+            if self.faiss_index is None:
+                semantic_scores = self.matrix @ v
+            else:
+                # Search all chunks before PDE filtering. Global top-k followed
+                # by filtering can omit the best in-scope evidence.
+                values, indices = self.faiss_index.search(
+                    np.ascontiguousarray(v[None, :], dtype=np.float32), len(self.docs)
+                )
+                semantic_scores = np.empty(len(self.docs), dtype=np.float32)
+                semantic_scores[indices[0]] = values[0]
+            order = np.argsort(-semantic_scores, kind="stable")
             ranks.append(
                 (self.semantic_weight, list(order[eligible[order]][:candidate_k]))
             )
@@ -388,6 +425,21 @@ class UnifiedAgent:
                 "summary": self.summary,
                 "qualification": "Research only; no automatic promotion",
             }
+        if tool in {"generate_report", "generate_feature_catalog"}:
+            if arguments:
+                raise ValueError("Document generation has no arguments")
+            result = v3_generate_documents(self.rag.root)
+            self.rag.reindex()
+            name = (
+                "technical_report.md"
+                if tool == "generate_report"
+                else "feature_catalog.md"
+            )
+            return {
+                "document": "generated_documents/" + name,
+                "text": result["documents"][name],
+                "rag_reindexed": True,
+            }
         if tool == "propose_config":
             if set(arguments) - {"equation", "changes"}:
                 raise ValueError("Unsupported proposal argument")
@@ -417,75 +469,9 @@ class UnifiedAgent:
         return result
 
 
-def us_app(summary, rag, agent):
-    from fastapi import FastAPI, HTTPException
-    from pydantic import BaseModel, Field, ConfigDict
-
-    # No future annotations: FastAPI must resolve these local schema classes directly.
-    class Search(BaseModel):
-        model_config = ConfigDict(extra="forbid")
-        query: str = Field(min_length=1, max_length=2000)
-        k: int = Field(default=5, ge=1, le=10)
-
-    class Command(BaseModel):
-        model_config = ConfigDict(extra="forbid")
-        tool: str
-        arguments: dict = Field(default_factory=dict)
-
-    class Prediction(BaseModel):
-        model_config = ConfigDict(extra="forbid")
-        equation: str
-        arm: str
-        seed: int
-        points: list[list[float]] = Field(min_length=1, max_length=1024)
-
-    class Question(BaseModel):
-        model_config = ConfigDict(extra="forbid")
-        question: str = Field(min_length=1, max_length=2000)
-
-    app = FastAPI(title="V3 PINN research API", version="3.0-integrated")
-
-    @app.get("/health")
-    def health():
-        return {"status": "ok", "research_only": True, "automatic_promotion": False}
-
-    @app.get("/comparison")
-    def comparison(equation: str = "wave2d"):
-        return agent.execute("compare", {"equation": equation})
-
-    @app.get("/report")
-    def report():
-        return summary
-
-    @app.post("/rag/search")
-    def search(req: Search):
-        try:
-            return {"results": rag.search(req.query, req.k), "backend": rag.backend}
-        except ValueError as e:
-            raise HTTPException(422, str(e))
-
-    @app.post("/agent/tool")
-    def tool(req: Command):
-        try:
-            return agent.execute(req.tool, req.arguments)
-        except (ValueError, TypeError, ZeroDivisionError) as e:
-            raise HTTPException(422, str(e))
-
-    @app.post("/agent/ask")
-    def ask(req: Question):
-        try:
-            return agent.ask(req.question)
-        except (ValueError, TypeError) as e:
-            raise HTTPException(422, str(e))
-
-    @app.post("/predict")
-    def predict(req: Prediction):
-        try:
-            return agent.execute("predict", req.model_dump())
-        except (ValueError, TypeError, FileNotFoundError) as e:
-            raise HTTPException(422, str(e))
-
-    return app
+def us_app(summary, rag, agent, registry_write=False, registry=None):
+    """Compatibility entry point for separated schema, service and route modules."""
+    return v3_api_app(summary, rag, agent, registry_write, registry)
 
 
 def us_regression(app, agent):

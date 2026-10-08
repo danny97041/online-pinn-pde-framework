@@ -32,6 +32,9 @@ def v3_initial_setup(
         "agent": "자연어 질문",
         "evaluate": "기능 검사",
         "train": "추가 학습",
+        "documents": "보고서·기능 목록 생성",
+        "visualize": "결과 시각화",
+        "registry": "추론 모델 관리",
     }
     style = {"description_width": "100px"}
     action = w.Dropdown(

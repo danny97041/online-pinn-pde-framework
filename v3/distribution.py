@@ -329,7 +329,9 @@ def release_training_policy(settings):
     }
 
 
-def release_training(root, settings, destination, parent=None, output_zip=None):
+def release_training(
+    root, settings, destination, parent=None, output_zip=None, completed_boundary=None
+):
     settings = release_validate_settings(
         settings, parent.get("settings") if parent else None
     )
@@ -454,6 +456,8 @@ def release_training(root, settings, destination, parent=None, output_zip=None):
         )
         u_json(destination / "summary.json", summary)
         u_pack(destination, output)
+        if completed_boundary is not None:
+            completed_boundary(destination, summary)
 
     save()
     if settings["equation"] == "wave2d":
@@ -494,21 +498,25 @@ def release_training(root, settings, destination, parent=None, output_zip=None):
     return output
 
 
-def release_services(root, use_llm=False, dense_rag=False):
+def release_services(root, use_llm=False, dense_rag=False, dense_backend="numpy"):
     root = Path(root)
     summary = json.loads((root / "summary.json").read_text(encoding="utf-8"))
-    rag = UnifiedRAG(root, dense=dense_rag)
+    rag = UnifiedRAG(root, dense=dense_rag, dense_backend=dense_backend)
     agent = UnifiedAgent(summary, rag, release_predictor(root))
     if use_llm:
         agent.enable_local_llm(LOCAL_MODEL)
     return agent, us_app(summary, rag, agent)
 
 
-def release_evaluate(root, real_llm=False, dense_rag=False, custom_questions=None):
+def release_evaluate(
+    root, real_llm=False, dense_rag=False, custom_questions=None, dense_backend="numpy"
+):
     from fastapi.testclient import TestClient
 
     total_started = time.perf_counter()
-    agent, app = release_services(root, use_llm=real_llm, dense_rag=dense_rag)
+    agent, app = release_services(
+        root, use_llm=real_llm, dense_rag=dense_rag, dense_backend=dense_backend
+    )
     load_seconds = time.perf_counter() - total_started
     started = time.perf_counter()
     agent.force_llm = real_llm

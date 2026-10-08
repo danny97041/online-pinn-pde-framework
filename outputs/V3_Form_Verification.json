@@ -4,15 +4,22 @@
   "source_hashes": {
     "contracts.py": "200aa5a78ec9457b1b6a1d8e31b6b6e1726e099ef3cb467a3d3de88a012c51b1",
     "equations.py": "0c3a5f990c949845c7cf93acb03e09cdf7b8b4c957a7932372cae204c8b7828a",
-    "natural_language.py": "3dd393c024813170754e9d7699d357a5bf32b4e3160a9c93a0733dd98d410ef1",
-    "services.py": "3e537a4662db8c182c33d613c09796071e02ef1131c7e28577a017e24eb1cc57",
-    "distribution.py": "3e24acbff8acfbd9d38bf4da0950ab303b855ae5b93955f608fd12ac2ee8f087",
+    "natural_language.py": "193ea61f58c40f2f97dce0bfda69bed235e6604951fc0f70fb308fdb9afbb26f",
+    "services.py": "b24ace73a7dbc202cbeccdd341587e23c71290f8d1f6446a824409c808e5d2c8",
+    "model_registry.py": "7c2ffcfa08162346ac2f8aa6d58219886de2ceda40c55de87ec2fc12e49c388a",
+    "api_schemas.py": "e2b7c5a4907543b0d68bf4e8a99cc01e3ee02434ef9bab3c85287c51c429379c",
+    "api_services.py": "5e2c451d264aff18cfc803d9269da8f3d7d076c397dccdfebdf4a9a81a6a1992",
+    "api_routes.py": "2c1b3503b48524c919ed82f6fe7b734d1ead31cdfb3fd172b5378b4dfea8769c",
+    "documents.py": "a6e2473d8982a9fd86cd176a8dd0960c4b630f32970c0e0e3c7cd17aaeb772d9",
+    "visualization.py": "25d13a57b7870cefd69daeb83cc6cb41f514bb7835a4e64e829a8853e556d0e9",
+    "distribution.py": "ac6e40add13feed793e1a3fcfab5f825971f49e6a7aa95c08e0759dbfea0a371",
+    "benchmark.py": "8874d3fa3d66eb2c6e65aae8557d4591972271c8bd1de7ec4e3cac3a7a884210",
     "candidate_runtime.py": "0706c513d0ba834df0c524626d8845d8ae7d1868a354ddd44a2464fcc41da1cf",
     "wave_inference.py": "8f829a14e2dfcb1d61f68bc69551c83716047fa052de60ced21aae17dc039940",
     "wave_runtime.py": "08a757eff079dc52913bb29c0aa4995ef860cbf4ad927419fc08515b2aa1d62e",
-    "verification.py": "09298ca6491c0944e3f1d2a8309af445183ce366c79c69f2ad8f362cbad32396",
+    "verification.py": "e951d06f7c13fb9685053ce7548c09ed6c939ce881273aa4921ee303f9e4a5b5",
     "session.py": "4621b8a12d8f9c4cd521f1931916405cf05a0639c4fcd0ba8ff692f4cf9ff554",
-    "interface.py": "a74bd7e699d3bb7bcb56bfe5a7d8c9889a79c0a5bd23fd4ab209358f9fb7e8ad"
+    "interface.py": "a35287f624f2c6c2f27e7204656d78b7e9b06fe712f610697949ec68871fd8ef"
   },
   "checks": {
     "archive_65_results": true,
@@ -61,5 +68,5 @@
   "actual_google_authentication": "not_run; offline failure injection only",
   "browser_javascript_logic": "passed_mock_dom_and_transport",
   "benchmark_retraining": false,
-  "seconds": 11.958903099999588
+  "seconds": 11.343999200005783
 }

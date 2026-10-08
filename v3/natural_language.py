@@ -12,9 +12,9 @@ NL_EQUATION_LABELS = {
     "heat2d": "2차원 열전도",
     "poisson2d": "2차원 포아송",
     "burgers": "버거스",
-    "kovasznay_forward": "Kovasznay 순방향",
-    "kovasznay_inverse": "Kovasznay 역문제",
-    "taylor_green": "Taylor–Green",
+    "kovasznay_forward": "Navier–Stokes · Kovasznay 순방향",
+    "kovasznay_inverse": "Navier–Stokes · Kovasznay 역문제",
+    "taylor_green": "Navier–Stokes · Taylor–Green",
     "darcy2d": "2차원 Darcy",
     "reaction_diffusion": "반응–확산",
 }
