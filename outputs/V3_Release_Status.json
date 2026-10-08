@@ -1,5 +1,5 @@
 {
-  "revision": "concise-comparison-v3",
+  "revision": "publication-text-v4",
   "distinct_trials": 65,
   "equations": 9,
   "archive": "passed",
@@ -17,7 +17,7 @@
     "form_local.json": {
       "passed": true,
       "source_scope": "current_local_form",
-      "sha256": "6b258d4129f249032d2b14a575d56af38b78a6b86a0e029c917380608fa5a33b"
+      "sha256": "00c1c8f7584ac2ce5bbef3e0b1b551309847be64a48a5a3f1a0b133b078a74e3"
     },
     "hybrid_rag.json": {
       "passed": true,
@@ -44,6 +44,11 @@
       "source_scope": "previous_local_patch",
       "sha256": "53caa8dbc33b5debda07c7294900a756e8c74c6624840fd60a1ca3471bf4b4ea"
     },
+    "publication_current_local.json": {
+      "passed": true,
+      "source_scope": "current_local_form",
+      "sha256": "a63753ad86faf7a13c4e450f62cebe9cd26b655eb7fe73bbc6928f62f649fea1"
+    },
     "rules_api.json": {
       "passed": true,
       "source_scope": "imported_historical",
@@ -52,7 +57,7 @@
     "source_current_local.json": {
       "passed": null,
       "source_scope": "current_local_form",
-      "sha256": "eeca957caf4b2c8f5f875432f3d3c77851f3273ad5ae21f0d26731f30a1f4996"
+      "sha256": "172b2b898f9e087f8fd28420d9c0420cade039af21a28b1ddde3dc4261375520"
     },
     "source_text_review.json": {
       "passed": null,
@@ -77,11 +82,10 @@
     "wave_handoff_local.json": {
       "passed": true,
       "source_scope": "previous_local_patch",
-      "sha256": "9018e1280b6ab5c300cecac9a99f60cf52396a3d89777dc01c863adc1498f5c6"
+      "sha256": "34968a8f8141e94bd281157dfa0e18aff62dc82c085d7281aef5279d471a8683"
     }
   },
   "colab_frontend_current_revision": "not_run",
-  "main_promoted": false,
   "overall_physics_approved": false,
   "imported_history_not_fresh_validation": true,
   "submitted_colab_runs": [
@@ -126,5 +130,5 @@
       }
     }
   ],
-  "current_edit_scope": "Comparison presentation only; submitted numerical and Qwen checks predate these edits"
+  "current_edit_scope": "Documentation and descriptive metadata only; submitted Colab checks preserve their executed source and revision"
 }

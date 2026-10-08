@@ -12,7 +12,7 @@ def main():
     paths += sorted(p for p in (ROOT / "v3").glob("*") if p.is_file())
     paths += [ROOT / "docs" / n for n in ["V3_RELEASE_CHECKLIST.md", "V3_COLAB_TEST_PLAN.md", "V3_RELEASE_NOTES.md"]]
     paths += [ROOT / "tools" / n for n in ["sync_v3_notebook.py", "review_v3_source.py", "test_v3_interface.py", "test_v3_wave_handoff.py", "package_v3.py", "audit_v3_checks.py", "prepare_v3_publish.py"]]
-    paths += [ROOT / "outputs" / n for n in ["Online_PINN_PDE_Framework_V3.ipynb", "V3_Release_Checksums.json", "V3_Release_Status.json", "V3_Source_Text_Review.json", "V3_Form_Verification.json", "V3_Validation_Audit.json"]]
+    paths += [ROOT / "outputs" / n for n in ["Online_PINN_PDE_Framework_V3.ipynb", "V3_Release_Checksums.json", "V3_Release_Status.json", "V3_Source_Text_Review.json", "V3_Form_Verification.json", "V3_Validation_Audit.json", "V3_Publication_Review.json"]]
     rows = []
     for path in paths:
         content = path.read_text(encoding="utf-8").replace("\r\n", "\n").encode("utf-8")

@@ -1,0 +1,53 @@
+{
+  "passed": true,
+  "review_date": "2026-10-09",
+  "basis_commit": "c32867ad0db5655d4a4ce3c80f52b3b493494f2b",
+  "scope": "Public Git text, notebook cells and outputs, release descriptions, PR descriptions, current V3 source and distribution documents",
+  "current_public_files_reviewed": 39,
+  "notebook_cells_reviewed": 129,
+  "notebook_output_blocks_reviewed": 83,
+  "git_inventory": {
+    "branch_heads": 3,
+    "version_tags": 3,
+    "commits": 14,
+    "unique_blobs": 114,
+    "commit_messages_reviewed": true
+  },
+  "pattern_scan": {
+    "current_unclassified_text_findings": 0,
+    "credential_pattern_matches": 0,
+    "personal_windows_path_matches": 0,
+    "limitations": "Pattern scanning and manual text review, not a complete security assessment"
+  },
+  "changes": [
+    "Replace experiment authorization and learning-rate provenance notes with neutral descriptions",
+    "Condense response and audit scope wording; retain benchmark and diagnostic-grid distinctions",
+    "Remove publication-state fields from experiment validation status",
+    "Synchronize readable source, notebook and current distribution documents"
+  ],
+  "checks": {
+    "syntax": "passed",
+    "numerical_ast": {
+      "candidate_runtime.py": true,
+      "wave_inference.py": true,
+      "wave_runtime.py": true,
+      "equations.py": true,
+      "contracts.py": true
+    },
+    "qwen_intent_ast": {
+      "un_llm_ask": true,
+      "un_local_llm": true,
+      "un_equations": true
+    },
+    "interface_checks_passed": 41,
+    "wave_checkpoint_lbfgs_adapter": true,
+    "actual_colab_frontend": "not_run"
+  },
+  "retained_originals": {
+    "v1_v2_notebooks": "unchanged",
+    "git_history_and_version_tags": "retained without rewriting",
+    "archived_validation_source": "retained verbatim as provenance, not current instructions",
+    "saved_experiment_payloads": "verified during packaging"
+  },
+  "benchmark_retraining": false
+}

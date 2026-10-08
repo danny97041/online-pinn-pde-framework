@@ -30,7 +30,7 @@ def load_wave_inference():
     AUDIT_POLICY = {
         "version": "wave-common-physics-v1",
         "threshold_provenance": "Proposed research rubric after seeing historical results; not a published acceptance standard",
-        "scope": "Post-hoc synthetic Wave benchmark audit; not industrial certification or domain-wide bound",
+        "scope": "Post-hoc synthetic Wave residual and reference-field audit",
         "diagnostic_seed": 937261,
         "grid_shape": [32, 32, 32],
         "independent_lhs_count": 16384,
@@ -952,7 +952,7 @@ def load_wave_inference():
         lines += [
             "",
             "BC/IC acceptance and worst-point assessment remain PENDING.",
-            "Finite diagnostic points do not provide a domain-wide error certificate.",
+            "Residual statistics describe the fixed diagnostic points, not every point in the domain.",
             "Adam and selected stage reports, both residual coefficient views, regional/time metrics and score evidence are in trials/*.json.",
         ]
         return "\n".join(lines) + "\n"

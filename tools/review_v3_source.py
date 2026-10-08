@@ -1,8 +1,9 @@
 """Record a source-text review without claiming model or Colab execution tests.
 
 Run before repackaging: the current result ZIP supplies the prior source snapshot.
-Only comments, docstrings and historical unused string headings are ignored in
-the numerical-runtime AST comparison. Changed numerical code fails that check.
+Comments, docstrings, report presentation and an explicit list of descriptive
+string replacements are excluded from the numerical-runtime AST comparison.
+All other string values and numerical code remain protected.
 """
 
 import argparse
@@ -21,6 +22,42 @@ NUMERICAL_MODULES = [
     "equations.py",
     "contracts.py",
 ]
+
+# Exact presentation-only replacements, identified by prior-value SHA-256.
+# Contract identifiers, hashes, equations and schedules still compare verbatim.
+DESCRIPTION_REPLACEMENTS = {
+    "wave_runtime.py": {
+        "Explicit five-method Stage 8 experiment configuration":
+            "9e3deb587e677ab111b58a3929ac3bb5f5c829c0100313b98cc05326cce2251c",
+        "Historical exploratory setting 0.004; literature provenance not independently verified":
+            "595f411135c77abb2c249169a4bb3a5050139ad2ff66e97e4fc230207baf9b12",
+    },
+    "wave_inference.py": {
+        "Post-hoc synthetic Wave residual and reference-field audit":
+            "5ae63beb5ab7d9fe8ee69960470c92df5b295dfa10245a364c6f14b966224eae",
+        "Residual statistics describe the fixed diagnostic points, not every point in the domain.":
+            "8d67611311143c180d3cd92cb765b2d5b6470b5803ed9e13ac8e9696795b55cf",
+    },
+    "services.py": {
+        "In-process API/agent allowlist and schema regression":
+            "f5c8ecd65dd98ebfae95ac115835ff3c9d93266f6028877402576c4c8bcd2087",
+        "Stored-model inference: finite, repeated and single/batch predictions":
+            "d00f180275aa2820de3e4a7b0f56bb17a579467925685aebba8b8949c8dbe5a5",
+    },
+}
+
+
+class RestoreDescriptiveBaseline(ast.NodeTransformer):
+    def __init__(self, module_name):
+        self.replacements = DESCRIPTION_REPLACEMENTS.get(module_name, {})
+
+    def visit_Constant(self, node):
+        if isinstance(node.value, str):
+            digest = hashlib.sha256(node.value.encode("utf-8")).hexdigest()
+            for current, previous_digest in self.replacements.items():
+                if node.value == current or digest == previous_digest:
+                    return ast.copy_location(ast.Constant(current), node)
+        return node
 
 
 class IgnoreDescriptionStrings(ast.NodeTransformer):
@@ -58,9 +95,14 @@ class IgnoreDescriptionStrings(ast.NodeTransformer):
         return self.generic_visit(node)
 
 
-def computational_ast(source):
+def source_ast(source, module_name):
+    return RestoreDescriptiveBaseline(module_name).visit(ast.parse(source))
+
+
+def computational_ast(source, module_name):
     return ast.dump(
-        IgnoreDescriptionStrings().visit(ast.parse(source)), include_attributes=False
+        IgnoreDescriptionStrings().visit(source_ast(source, module_name)),
+        include_attributes=False,
     )
 
 
@@ -72,11 +114,11 @@ def main(baseline_zip):
         for name in NUMERICAL_MODULES:
             old = archive.read("source_snapshot/" + name).decode("utf-8")
             new = (ROOT / "v3" / name).read_text(encoding="utf-8")
-            equivalence[name] = computational_ast(old) == computational_ast(new)
+            equivalence[name] = computational_ast(old, name) == computational_ast(new, name)
         for name in ["services.py", "natural_language.py"]:
             unchanged_planner[name] = (
-                ast.dump(ast.parse(archive.read("source_snapshot/" + name).decode("utf-8")), include_attributes=False)
-                == ast.dump(ast.parse((ROOT / "v3" / name).read_text(encoding="utf-8")), include_attributes=False)
+                ast.dump(source_ast(archive.read("source_snapshot/" + name).decode("utf-8"), name), include_attributes=False)
+                == ast.dump(source_ast((ROOT / "v3" / name).read_text(encoding="utf-8"), name), include_attributes=False)
             )
     assert all(equivalence.values()), equivalence
     # Natural-language presentation is intentionally extended in this revision.
@@ -110,7 +152,7 @@ def main(baseline_zip):
     for path in FILES:
         compile(path.read_text(encoding="utf-8"), str(path), "exec")
     report = {
-        "scope": "커널 타이머 대체 경로·하단 위젯 갱신·직접 질문·한국어 답변·사용자 시험 문항 추가. 보고서 표시를 제외한 수치 집계와 학습 수식·일정, Qwen 의도 판단과 검색 경로는 보존. 새 검사는 별도 런타임 보고서로 판정.",
+        "scope": "배포 소스의 구문과 계산·도구 호출 코드 비교. 문서·응답 표시·명시적으로 열거한 설명 문자열은 별도 검토하며 실행 검사는 독립 보고서로 기록합니다.",
         "python_files_reviewed": len(FILES),
         "syntax_compilation": "passed",
         "numerical_ast_unchanged": equivalence,
@@ -118,7 +160,10 @@ def main(baseline_zip):
         "new_checkpoint_factory_hook_excluded_from_ast_comparison": True,
         "planner_and_hybrid_rag_ast_unchanged": unchanged_planner,
         "qwen_intent_functions_ast_unchanged": intent_equivalence,
-        "runtime_verification": "pending",
+        "descriptive_string_replacements": {
+            name: len(values) for name, values in DESCRIPTION_REPLACEMENTS.items()
+        },
+        "runtime_verification": "recorded_separately",
         "training_executed": False,
         "changes": [
             "일반 비교 답변과 보고서의 반복 안내 축약; 필요한 질문의 확인·추가 설명은 유지",
@@ -129,10 +174,11 @@ def main(baseline_zip):
             "대표 노트북 안내를 공개 배포용 기능 설명과 실행 절차로 정리",
             "결과·검사·학습 ZIP 파일명을 단순화하고 긴 이름 입력도 지원",
             "모델 전수·Wave 재개·LHS 경계 검사를 선택 실행으로 통합",
-            "개인 작업 메모와 승격 절차를 개발자 문서로 분리",
+            "사용 안내와 유지관리 문서를 분리",
             "보고서 수치 집계·학습 일정·샘플링·Qwen 의도 판단·검색 경로 보존; 자연어 응답 표현과 추가 시험 기록은 변경",
             "Colab 브라우저 콜백 타이머와 하단 안전 기본 조회 버튼 추가; 일반 노트북의 커널 타이머는 유지",
             "자동 파일 위치에서 연결된 Drive·로컬 ZIP이 없을 때 연결 1회 시도; 화면 버전 안내 문구 제거",
+            "실험 설명을 일반 배포 문구로 정리하고 검사 범위를 간결하게 표시",
         ],
         "files_sha256": {
             p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in FILES

@@ -202,7 +202,7 @@ def un_ask(agent, question):
         call("report", {})
         return response(
             "answered",
-            "현재 자료는 저장 실험의 비교 결과입니다. 요청하신 적용 여부를 판단할 자료는 포함되어 있지 않습니다.",
+            "저장 실험의 비교 자료이며 적용 여부를 판단할 자료는 포함되어 있지 않습니다.",
         )
 
     if any(token in q for token in ["전체", "보고서", "몇 개", "몇개", "진행 상태"]):

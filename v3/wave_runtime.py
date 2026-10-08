@@ -4101,7 +4101,7 @@ def load_wave_training(BUNDLE, settings=None):
             "file": Path(path).name,
             "sha256": sha256(path),
             "cpu_reviewed_trials": 8,
-            "authorization": "User explicitly requested Stage 8 five-method execution",
+            "authorization": "Explicit five-method Stage 8 experiment configuration",
             "not_a_claim_all_parent_reference_errors_are_below_10pct": True,
         }
 
@@ -5134,7 +5134,7 @@ def load_wave_training(BUNDLE, settings=None):
     }
     FF_POLICY = {
         "version": 1,
-        "learning_rate_provenance": "0.004 user-reported likely thesis run; not independently verified",
+        "learning_rate_provenance": "Historical exploratory setting 0.004; literature provenance not independently verified",
         "normalization": "each physical coordinate to [-1,1]",
         "phase": "2*pi*normalized_coordinate@B; B in cycles per normalized coordinate",
         "scale_selection": "a priori exploratory .125/.25/.5; no exact-solution frequencies injected",

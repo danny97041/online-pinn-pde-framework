@@ -66,7 +66,11 @@ def main(bundle, numerical=False, scratch_base=None):
     temp = Path(scratch_base) if scratch_base else ROOT / "tmp/patch_tests"
     temp.mkdir(parents=True, exist_ok=True)
     tempfile.tempdir = str(temp)
-    root = Path(tempfile.mkdtemp(prefix="results_", dir=temp)) / "contents"
+    fixture = Path(tempfile.mkdtemp(prefix="results_", dir=temp))
+    fixture_bundle = fixture / Path(bundle).name
+    shutil.copyfile(bundle, fixture_bundle)
+    bundle = fixture_bundle
+    root = fixture / "contents"
     summary = ns["release_open"](bundle, root)
     assert summary["completed_trials"] == 65
     assert "tensorflow" not in sys.modules

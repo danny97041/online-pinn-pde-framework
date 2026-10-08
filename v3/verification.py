@@ -76,7 +76,7 @@ def release_model_check(root):
         "prediction": regression,
         "reference_reconstruction": rows,
         "training_executed": False,
-        "scope": "Selected inference snapshots, stored reference grids; no domain-wide physics certificate",
+        "scope": "Stored inference snapshots and fixed reference-grid error reconstruction",
     }
 
 

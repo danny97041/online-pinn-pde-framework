@@ -539,7 +539,7 @@ def us_regression(app, agent):
         )
     return {
         "passed": True,
-        "scope": "in-process API/agent safety and schema regression; not deployment or CPU model certification",
+        "scope": "In-process API/agent allowlist and schema regression",
     }
 
 
@@ -584,5 +584,5 @@ def us_prediction_regression(predictor, rows):
     return {
         "checks": checks,
         "passed": bool(checks) and all(c["status"] == "passed" for c in checks),
-        "scope": "local inference regression only; no optimizer continuation or industrial certification",
+        "scope": "Stored-model inference: finite, repeated and single/batch predictions",
     }

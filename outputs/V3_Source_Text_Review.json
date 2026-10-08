@@ -1,5 +1,5 @@
 {
-  "scope": "커널 타이머 대체 경로·하단 위젯 갱신·직접 질문·한국어 답변·사용자 시험 문항 추가. 보고서 표시를 제외한 수치 집계와 학습 수식·일정, Qwen 의도 판단과 검색 경로는 보존. 새 검사는 별도 런타임 보고서로 판정.",
+  "scope": "배포 소스의 구문과 계산·도구 호출 코드 비교. 문서·응답 표시·명시적으로 열거한 설명 문자열은 별도 검토하며 실행 검사는 독립 보고서로 기록합니다.",
   "python_files_reviewed": 15,
   "syntax_compilation": "passed",
   "numerical_ast_unchanged": {
@@ -20,7 +20,12 @@
     "un_local_llm": true,
     "un_equations": true
   },
-  "runtime_verification": "pending",
+  "descriptive_string_replacements": {
+    "wave_runtime.py": 2,
+    "wave_inference.py": 2,
+    "services.py": 2
+  },
+  "runtime_verification": "recorded_separately",
   "training_executed": false,
   "changes": [
     "일반 비교 답변과 보고서의 반복 안내 축약; 필요한 질문의 확인·추가 설명은 유지",
@@ -31,10 +36,11 @@
     "대표 노트북 안내를 공개 배포용 기능 설명과 실행 절차로 정리",
     "결과·검사·학습 ZIP 파일명을 단순화하고 긴 이름 입력도 지원",
     "모델 전수·Wave 재개·LHS 경계 검사를 선택 실행으로 통합",
-    "개인 작업 메모와 승격 절차를 개발자 문서로 분리",
+    "사용 안내와 유지관리 문서를 분리",
     "보고서 수치 집계·학습 일정·샘플링·Qwen 의도 판단·검색 경로 보존; 자연어 응답 표현과 추가 시험 기록은 변경",
     "Colab 브라우저 콜백 타이머와 하단 안전 기본 조회 버튼 추가; 일반 노트북의 커널 타이머는 유지",
-    "자동 파일 위치에서 연결된 Drive·로컬 ZIP이 없을 때 연결 1회 시도; 화면 버전 안내 문구 제거"
+    "자동 파일 위치에서 연결된 Drive·로컬 ZIP이 없을 때 연결 1회 시도; 화면 버전 안내 문구 제거",
+    "실험 설명을 일반 배포 문구로 정리하고 검사 범위를 간결하게 표시"
   ],
   "files_sha256": {
     "__init__.py": "05d13037636effebc9cd00f88e5bbbffeb79b3891aea3d91472a4186d3bee5f4",
@@ -46,11 +52,11 @@
     "distribution.py": "3e24acbff8acfbd9d38bf4da0950ab303b855ae5b93955f608fd12ac2ee8f087",
     "equations.py": "0c3a5f990c949845c7cf93acb03e09cdf7b8b4c957a7932372cae204c8b7828a",
     "interface.py": "a74bd7e699d3bb7bcb56bfe5a7d8c9889a79c0a5bd23fd4ab209358f9fb7e8ad",
-    "natural_language.py": "7009c1b11c74ce34c703710622c0f998f04a2b12dc4bb8b76a65429ff33c8d96",
-    "services.py": "b562d6e28e7fbe2b34ec2dfa29d2525f6560749de8f866e4125236640f499bce",
+    "natural_language.py": "3dd393c024813170754e9d7699d357a5bf32b4e3160a9c93a0733dd98d410ef1",
+    "services.py": "3e537a4662db8c182c33d613c09796071e02ef1131c7e28577a017e24eb1cc57",
     "session.py": "4621b8a12d8f9c4cd521f1931916405cf05a0639c4fcd0ba8ff692f4cf9ff554",
-    "verification.py": "5589d843536c72712c4604e4593cfac286eae38e9aab42c02e7e9295a8630359",
-    "wave_inference.py": "1c8d43a8bd8a0a45ca4f8955b2952ceda1bbf5b6b012b488af8940bd0c043f80",
-    "wave_runtime.py": "7b3a07d5e8dacf956bb12f5878a7f88c0018951b2e702606dae94fa7edc474ce"
+    "verification.py": "09298ca6491c0944e3f1d2a8309af445183ce366c79c69f2ad8f362cbad32396",
+    "wave_inference.py": "8f829a14e2dfcb1d61f68bc69551c83716047fa052de60ced21aae17dc039940",
+    "wave_runtime.py": "08a757eff079dc52913bb29c0aa4995ef860cbf4ad927419fc08515b2aa1d62e"
   }
 }

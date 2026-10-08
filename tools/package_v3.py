@@ -169,6 +169,9 @@ def main(evidence_zip, validation_zips=()):
     source_review = output / "V3_Source_Text_Review.json"
     if source_review.exists():
         shutil.copyfile(source_review, data / "validation/source_current_local.json")
+    publication_review = output / "V3_Publication_Review.json"
+    if publication_review.exists():
+        shutil.copyfile(publication_review, data / "validation/publication_current_local.json")
     checks = {}
     for path in (data / "validation").glob("*.json"):
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -176,7 +179,7 @@ def main(evidence_zip, validation_zips=()):
             "passed": value.get("passed"),
             "source_scope": (
                 "current_local_form"
-                if path.name in {"form_local.json", "source_current_local.json"}
+                if path.name in {"form_local.json", "source_current_local.json", "publication_current_local.json"}
                 else (
                     "previous_local_patch"
                     if path.name in {"patch_local.json", "wave_handoff_local.json"}
@@ -186,17 +189,16 @@ def main(evidence_zip, validation_zips=()):
             "sha256": ns["u_sha"](path),
         }
     status = {
-        "revision": "concise-comparison-v3",
+        "revision": "publication-text-v4",
         "distinct_trials": 65,
         "equations": 9,
         "archive": "passed",
         "checks": checks,
         "colab_frontend_current_revision": "not_run",
-        "main_promoted": False,
         "overall_physics_approved": False,
         "imported_history_not_fresh_validation": True,
         "submitted_colab_runs": imported,
-        "current_edit_scope": "Comparison presentation only; submitted numerical and Qwen checks predate these edits",
+        "current_edit_scope": "Documentation and descriptive metadata only; submitted Colab checks preserve their executed source and revision",
     }
     ns["u_json"](data / "validation/status.json", status)
     ns["u_json"](
@@ -233,6 +235,8 @@ def main(evidence_zip, validation_zips=()):
         ROOT / "docs/V3_RELEASE_NOTES.md",
         ROOT / ".github/workflows/v3-source.yml",
     ]
+    if publication_review.exists():
+        public.append(publication_review)
     public += [
         ROOT / "tools" / name
         for name in [
