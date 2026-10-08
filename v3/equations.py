@@ -156,24 +156,34 @@ def candidate_residual(name, z, q, g, h, coefficient=None):
         return np.column_stack(
             (
                 ut + u * ux + v * uy + g[:, 2, 0] - nu * lap,
-                vt + u * g[:, 1, 0] + v * g[:, 1, 1] + g[:, 2, 1] - nu * (h[:, 1, 0] + h[:, 1, 1]),
+                vt
+                + u * g[:, 1, 0]
+                + v * g[:, 1, 1]
+                + g[:, 2, 1]
+                - nu * (h[:, 1, 0] + h[:, 1, 1]),
                 ux + g[:, 1, 1],
             )
         )
     if name == "heat2d":
         return (g[:, 0, 2] - 0.1 * lap)[:, None]
     if name == "poisson2d":
-        return (-lap - 2 * np.pi**2 * np.sin(np.pi * z[:, 0]) * np.sin(np.pi * z[:, 1]))[:, None]
+        return (
+            -lap - 2 * np.pi**2 * np.sin(np.pi * z[:, 0]) * np.sin(np.pi * z[:, 1])
+        )[:, None]
     if name == "darcy2d":
         sx, sy = np.sin(np.pi * z[:, 0]), np.sin(np.pi * z[:, 1])
         cx, cy = np.cos(np.pi * z[:, 0]), np.cos(np.pi * z[:, 1])
         k = 1 + 0.5 * sx * sy
         kx = 0.5 * np.pi * cx * sy
         ky = 0.5 * np.pi * sx * cy
-        forcing = 2 * np.pi**2 * k * sx * sy - 0.5 * np.pi**2 * ((cx * sy) ** 2 + (sx * cy) ** 2)
+        forcing = 2 * np.pi**2 * k * sx * sy - 0.5 * np.pi**2 * (
+            (cx * sy) ** 2 + (sx * cy) ** 2
+        )
         return (-k * lap - kx * ux - ky * uy - forcing)[:, None]
     if name == "reaction_diffusion":
-        exact = 0.2 * np.sin(np.pi * z[:, 0]) * np.sin(np.pi * z[:, 1]) * np.exp(-z[:, 2])
+        exact = (
+            0.2 * np.sin(np.pi * z[:, 0]) * np.sin(np.pi * z[:, 1]) * np.exp(-z[:, 2])
+        )
         forcing = (-2 + 0.02 * np.pi**2) * exact + exact**3
         return (g[:, 0, 2] - 0.01 * lap - (u - u**3) - forcing)[:, None]
     raise ValueError(name)
@@ -221,20 +231,28 @@ def candidate_tf(name, z):
         second.append(
             tf.stack(
                 [
-                    outer.gradient(v, X, unconnected_gradients=tf.UnconnectedGradients.ZERO)[:, j]
+                    outer.gradient(
+                        v, X, unconnected_gradients=tf.UnconnectedGradients.ZERO
+                    )[:, j]
                     for j, v in enumerate(row)
                 ],
                 axis=1,
             )
         )
     del inner, outer
-    return q.numpy(), tf.stack(gradients, axis=1).numpy(), tf.stack(second, axis=1).numpy()
+    return (
+        q.numpy(),
+        tf.stack(gradients, axis=1).numpy(),
+        tf.stack(second, axis=1).numpy(),
+    )
 
 
 def candidate_points(name, count=128):
     domain = np.array(CANDIDATES[name]["domain"], float)
     rng = np.random.default_rng(98271 + CANDIDATES[name]["priority"])
-    unit = np.column_stack([(rng.permutation(count) + rng.random(count)) / count for _ in domain])
+    unit = np.column_stack(
+        [(rng.permutation(count) + rng.random(count)) / count for _ in domain]
+    )
     return domain[:, 0] + unit * (domain[:, 1] - domain[:, 0])
 
 
@@ -267,7 +285,9 @@ def candidate_audit(name, autodiff=True):
         if name == "taylor_green":
             l = candidate_tf(name, lo) if autodiff else candidate_fd(name, lo)
             r = candidate_tf(name, hi) if autodiff else candidate_fd(name, hi)
-            error = max(float(np.max(abs(left - right))), float(np.max(abs(l[1] - r[1]))))
+            error = max(
+                float(np.max(abs(left - right))), float(np.max(abs(l[1] - r[1])))
+            )
             check = error < 1e-7
         elif config["boundary"] == "homogeneous Dirichlet":
             error = float(max(np.max(abs(left)), np.max(abs(right))))

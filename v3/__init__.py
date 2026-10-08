@@ -22,6 +22,7 @@ def context():
         "wave_inference.py",
         "wave_runtime.py",
         "verification.py",
+        "session.py",
         "interface.py",
     ]
     for name in modules:
@@ -30,6 +31,7 @@ def context():
     import hashlib
 
     namespace["V3_EXECUTED_SOURCE_HASHES"] = {
-        name: hashlib.sha256((directory / name).read_bytes()).hexdigest() for name in modules
+        name: hashlib.sha256((directory / name).read_bytes()).hexdigest()
+        for name in modules
     }
     return namespace

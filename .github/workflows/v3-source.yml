@@ -1,9 +1,11 @@
 name: V3 readable source
 on:
   push:
-    paths: ["v3/**", "outputs/Online_PINN_PDE_Framework_V3.ipynb"]
+    paths: ["v3/**", "tools/sync_v3_notebook.py", "outputs/Online_PINN_PDE_Framework_V3.ipynb", ".github/workflows/v3-source.yml"]
   pull_request:
-    paths: ["v3/**", "outputs/Online_PINN_PDE_Framework_V3.ipynb"]
+    paths: ["v3/**", "tools/sync_v3_notebook.py", "outputs/Online_PINN_PDE_Framework_V3.ipynb", ".github/workflows/v3-source.yml"]
+permissions:
+  contents: read
 jobs:
   syntax:
     runs-on: ubuntu-latest
@@ -13,6 +15,10 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m compileall -q v3
+      - name: Notebook source matches readable modules
+        run: |
+          python tools/sync_v3_notebook.py
+          git diff --exit-code -- outputs/Online_PINN_PDE_Framework_V3.ipynb
       - run: pip install numpy ipywidgets
       - name: Results definitions do not import TensorFlow
         run: |

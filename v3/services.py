@@ -13,7 +13,9 @@ def us_chunks(root):
     root = Path(root)
     docs = []
     # Only generated textual evidence, never weights, input code or arbitrary directories.
-    paths = [root / "REPORT.md", root / "summary.json"] + sorted((root / "evidence").glob("*.json"))
+    paths = [root / "REPORT.md", root / "summary.json"] + sorted(
+        (root / "evidence").glob("*.json")
+    )
     paths += sorted((root / "routes").glob("*.json"))
     paths += sorted((root / "candidates").glob("*/*/result.json"))
     paths += [root / "README.md", root / "contract.json"]
@@ -35,7 +37,10 @@ def us_chunks(root):
                 "reload_checks",
                 "adaptive_updates",
             ]:
-                return {"stored_entry_count": len(value), "full_evidence_source": source}
+                return {
+                    "stored_entry_count": len(value),
+                    "full_evidence_source": source,
+                }
             if isinstance(value, dict):
                 return {k: compact(v, k) for k, v in value.items()}
             if isinstance(value, list):
@@ -67,10 +72,13 @@ def us_chunks(root):
                 )
             ]
             pieces += [
-                json.dumps(row, ensure_ascii=False) for row in data["aggregate"] + data["rows"]
+                json.dumps(row, ensure_ascii=False)
+                for row in data["aggregate"] + data["rows"]
             ]
         elif path.suffix == ".json":
-            pieces = [json.dumps(compact(json.loads(text)), ensure_ascii=False, indent=2)]
+            pieces = [
+                json.dumps(compact(json.loads(text)), ensure_ascii=False, indent=2)
+            ]
         else:
             pieces = [text]
         for piece_index, piece in enumerate(pieces):
@@ -151,7 +159,8 @@ class UnifiedRAG:
                 json.dumps(self.docs, ensure_ascii=False, sort_keys=True).encode()
             ).hexdigest()
             text_keys = [
-                hashlib.sha256((d["id"] + "\n" + d["text"]).encode()).hexdigest() for d in self.docs
+                hashlib.sha256((d["id"] + "\n" + d["text"]).encode()).hexdigest()
+                for d in self.docs
             ]
             cache = self.root / "rag_artifacts/e5_embeddings.npz"
             metadata = cache.with_suffix(".json")
@@ -162,32 +171,45 @@ class UnifiedRAG:
                     raise ValueError("Embedding cache hash mismatch")
                 with np.load(cache, allow_pickle=False) as z:
                     reuse = z["embeddings"]
-                if reuse.shape != (stored["count"], 384) or not np.isfinite(reuse).all():
+                if (
+                    reuse.shape != (stored["count"], 384)
+                    or not np.isfinite(reuse).all()
+                ):
                     raise ValueError("Invalid embedding cache")
             if reuse is not None and stored["corpus_sha256"] == corpus_sha:
                 self.matrix = reuse
             else:
                 count = len(reuse) if reuse is not None else 0
                 prefix_sha = hashlib.sha256(
-                    json.dumps(self.docs[:count], ensure_ascii=False, sort_keys=True).encode()
+                    json.dumps(
+                        self.docs[:count], ensure_ascii=False, sort_keys=True
+                    ).encode()
                 ).hexdigest()
                 old_keys = stored.get("document_text_sha256", []) if stored else []
                 if count and len(old_keys) == count:
                     by_key = dict(zip(old_keys, reuse))
-                    missing = [i for i, key in enumerate(text_keys) if key not in by_key]
+                    missing = [
+                        i for i, key in enumerate(text_keys) if key not in by_key
+                    ]
                     if missing:
                         added = self.encoder.encode(
                             ["passage: " + self.docs[i]["text"] for i in missing]
                         )
                         by_key.update((text_keys[i], v) for i, v in zip(missing, added))
                     self.matrix = np.stack([by_key[key] for key in text_keys])
-                elif count and prefix_sha == stored["corpus_sha256"] and count < len(self.docs):
+                elif (
+                    count
+                    and prefix_sha == stored["corpus_sha256"]
+                    and count < len(self.docs)
+                ):
                     extra = self.encoder.encode(
                         ["passage: " + d["text"] for d in self.docs[count:]]
                     )
                     self.matrix = np.concatenate([reuse, extra])
                 else:
-                    self.matrix = self.encoder.encode(["passage: " + d["text"] for d in self.docs])
+                    self.matrix = self.encoder.encode(
+                        ["passage: " + d["text"] for d in self.docs]
+                    )
             cache.parent.mkdir(exist_ok=True)
             np.savez_compressed(cache, embeddings=self.matrix)
             u_json(
@@ -218,9 +240,16 @@ class UnifiedRAG:
             raise ValueError("k must be 1..10")
         scores = np.zeros(len(self.docs))
         for term in set(us_tokens(query)):
-            idf = math.log(1 + (len(self.docs) - self.df[term] + 0.5) / (self.df[term] + 0.5))
+            idf = math.log(
+                1 + (len(self.docs) - self.df[term] + 0.5) / (self.df[term] + 0.5)
+            )
             freq = np.array([c[term] for c in self.terms])
-            scores += idf * freq * 2.5 / (freq + 1.5 * (0.25 + 0.75 * self.lengths / self.avg))
+            scores += (
+                idf
+                * freq
+                * 2.5
+                / (freq + 1.5 * (0.25 + 0.75 * self.lengths / self.avg))
+            )
         equations = un_equations(query)
 
         def scope(d):
@@ -250,14 +279,19 @@ class UnifiedRAG:
         order = np.argsort(-scores, kind="stable")
         candidate_k = max(5, k * 4)
         ranks = [
-            (self.keyword_weight, list(order[(scores[order] > 0) & eligible[order]][:candidate_k]))
+            (
+                self.keyword_weight,
+                list(order[(scores[order] > 0) & eligible[order]][:candidate_k]),
+            )
         ]
         if self.encoder is not None:
             v = self.encoder.encode(
                 ["query: " + query], normalize_embeddings=True, show_progress_bar=False
             )[0]
             order = np.argsort(-(self.matrix @ v), kind="stable")
-            ranks.append((self.semantic_weight, list(order[eligible[order]][:candidate_k])))
+            ranks.append(
+                (self.semantic_weight, list(order[eligible[order]][:candidate_k]))
+            )
         fused = {}
         for weight, ranking in ranks:
             for rank, index in enumerate(ranking):
@@ -461,8 +495,13 @@ def us_regression(app, agent):
         assert c.get("/health").status_code == 200
         assert c.get("/comparison?equation=wave2d").status_code == 200
         assert c.get("/report").json()["automatic_promotion"] is False
-        assert c.post("/rag/search", json={"query": "baseline", "k": 3}).status_code == 200
-        assert c.post("/rag/search", json={"query": "baseline", "k": 100}).status_code == 422
+        assert (
+            c.post("/rag/search", json={"query": "baseline", "k": 3}).status_code == 200
+        )
+        assert (
+            c.post("/rag/search", json={"query": "baseline", "k": 100}).status_code
+            == 422
+        )
         assert (
             c.post(
                 "/agent/tool", json={"tool": "shell", "arguments": {"cmd": "echo bad"}}
@@ -471,14 +510,18 @@ def us_regression(app, agent):
         )
         assert (
             c.post(
-                "/agent/tool", json={"tool": "calculate", "arguments": {"expression": "2*(3+4)"}}
+                "/agent/tool",
+                json={"tool": "calculate", "arguments": {"expression": "2*(3+4)"}},
             ).json()["value"]
             == 14
         )
         assert (
             c.post(
                 "/agent/tool",
-                json={"tool": "calculate", "arguments": {"expression": "__import__('os')"}},
+                json={
+                    "tool": "calculate",
+                    "arguments": {"expression": "__import__('os')"},
+                },
             ).status_code
             == 422
         )
@@ -520,13 +563,23 @@ def us_prediction_regression(predictor, rows):
         try:
             a = np.asarray(predictor(**identity, points=x)["prediction"])
             b = np.asarray(predictor(**identity, points=x)["prediction"])
-            singles = np.concatenate([predictor(**identity, points=[v])["prediction"] for v in x])
-            if not np.array_equal(a, b) or not np.allclose(a, singles, rtol=1e-4, atol=1e-6):
+            singles = np.concatenate(
+                [predictor(**identity, points=[v])["prediction"] for v in x]
+            )
+            if not np.array_equal(a, b) or not np.allclose(
+                a, singles, rtol=1e-4, atol=1e-6
+            ):
                 raise ValueError("Repeated or single/batch inference mismatch")
-            checks.append({**identity, "status": "passed", "finite_repeat_single_batch": True})
+            checks.append(
+                {**identity, "status": "passed", "finite_repeat_single_batch": True}
+            )
         except FileNotFoundError as exc:
             checks.append(
-                {**identity, "status": "not_run_missing_model_artifact", "reason": str(exc)}
+                {
+                    **identity,
+                    "status": "not_run_missing_model_artifact",
+                    "reason": str(exc),
+                }
             )
     return {
         "checks": checks,

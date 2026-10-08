@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 
-def main(evidence_zip):
+def main(evidence_zip, validation_zips=()):
     from v3 import context
 
     ns = context()
@@ -39,14 +39,101 @@ def main(evidence_zip):
     source_id = ns["u_sha"](baseline)[:16]
     history = data / "provenance/source_history" / source_id
     if original_source.exists():
-        shutil.copytree(original_source, history)
-    for name in ["status.json", "current.json"]:
-        previous = data / "validation" / name
+        shutil.copytree(original_source, history, dirs_exist_ok=True)
+    replaced = {
+        "README.md",
+        "REPORT.md",
+        "docs/V3_COLAB_TEST_PLAN.md",
+        "provenance/distribution_source.json",
+        "provenance/validation_imports.json",
+        "validation/status.json",
+        "validation/current.json",
+        "validation/patch_local.json",
+        "validation/wave_handoff_local.json",
+        "validation/form_local.json",
+        "validation/source_current_local.json",
+        "validation/submitted_colab_audit.json",
+    }
+    for name in replaced:
+        previous = data / name
         if previous.exists():
-            shutil.copyfile(previous, history / name)
+            saved = history / "previous_payloads" / name
+            saved.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(previous, saved)
+    baseline_current = json.loads(
+        (data / "validation/current.json").read_text(encoding="utf-8")
+    )
+    imported = []
+    immutable = {
+        name: digest
+        for name, digest in originals.items()
+        if name not in {"unified_manifest.json", "README.md", "REPORT.md"}
+        and not name.startswith(
+            ("source_snapshot/", "provenance/", "validation/", "docs/")
+        )
+    }
+    for bundle in [baseline, *map(Path, validation_zips)]:
+        ns["u_verify_zip"](bundle, "unified_manifest.json")
+        with zipfile.ZipFile(bundle) as archive:
+            for name, digest in immutable.items():
+                if ns["hashlib"].sha256(archive.read(name)).hexdigest() != digest:
+                    raise ValueError(
+                        "Validation ZIP contains different experiment data: " + name
+                    )
+            current = json.loads(archive.read("validation/current.json"))
+            latest = current.get("latest_run")
+            if not latest or not latest.startswith("validation/runs/"):
+                raise ValueError("An independent submitted runtime record is required")
+            run = json.loads(archive.read(latest))
+            if not run.get("passed"):
+                raise ValueError("Submitted runtime checks did not pass")
+            for name in archive.namelist():
+                if not name.startswith("validation/runs/") or name.endswith("/"):
+                    continue
+                destination = data / name
+                content = archive.read(name)
+                if destination.exists() and destination.read_bytes() != content:
+                    raise ValueError("Conflicting validation run record: " + name)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(content)
+            imported.append(
+                {
+                    "filename": bundle.name,
+                    "sha256": ns["u_sha"](bundle),
+                    "latest_run": latest,
+                    "passed": run["passed"],
+                    "revision": run["revision"],
+                    "source_hashes": run["source_hashes"],
+                }
+            )
+    ns["u_json"](data / "provenance/validation_imports.json", imported)
+    audit = output / "V3_Validation_Audit.json"
+    if audit.exists():
+        audit_value = json.loads(audit.read_text(encoding="utf-8"))
+        expected_digests = {item["sha256"] for item in imported}
+        if {item["sha256"] for item in audit_value["archives"]} != expected_digests:
+            raise ValueError("The submitted audit does not match the packaging inputs")
+        shutil.copyfile(audit, data / "validation/submitted_colab_audit.json")
+        notebook_record = audit_value.get("executed_source_notebook")
+        if notebook_record:
+            preserved_notebook = output / notebook_record["filename"]
+            if ns["u_sha"](preserved_notebook) != notebook_record["sha256"]:
+                raise ValueError("Executed-source notebook changed after audit")
+            destination = (
+                data / "provenance/validation_source" / preserved_notebook.name
+            )
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(preserved_notebook, destination)
     for path in (ROOT / "v3").glob("*.py"):
         shutil.copyfile(path, original_source / path.name)
     shutil.copyfile(ROOT / "v3/README.md", data / "README.md")
+    ns["u_report_markdown"](data, summary["aggregate"])
+    (data / "docs").mkdir(exist_ok=True)
+    shutil.copyfile(
+        ROOT / "docs/V3_COLAB_TEST_PLAN.md", data / "docs/V3_COLAB_TEST_PLAN.md"
+    )
+    for name in ["V3_RELEASE_CHECKLIST.md", "V3_RELEASE_NOTES.md"]:
+        shutil.copyfile(ROOT / "docs" / name, data / "docs" / name)
     notebook = output / "Online_PINN_PDE_Framework_V3.ipynb"
     ns["u_json"](
         data / "provenance/distribution_source.json",
@@ -76,20 +163,30 @@ def main(evidence_zip):
     handoff = output / "V3_Wave_Handoff_Verification.json"
     if handoff.exists():
         shutil.copyfile(handoff, data / "validation/wave_handoff_local.json")
+    form_check = output / "V3_Form_Verification.json"
+    if form_check.exists():
+        shutil.copyfile(form_check, data / "validation/form_local.json")
+    source_review = output / "V3_Source_Text_Review.json"
+    if source_review.exists():
+        shutil.copyfile(source_review, data / "validation/source_current_local.json")
     checks = {}
     for path in (data / "validation").glob("*.json"):
         value = json.loads(path.read_text(encoding="utf-8"))
         checks[path.name] = {
             "passed": value.get("passed"),
             "source_scope": (
-                "current_local_patch"
-                if path.name in {"patch_local.json", "wave_handoff_local.json"}
-                else "imported_historical"
+                "current_local_form"
+                if path.name in {"form_local.json", "source_current_local.json"}
+                else (
+                    "previous_local_patch"
+                    if path.name in {"patch_local.json", "wave_handoff_local.json"}
+                    else "imported_historical"
+                )
             ),
             "sha256": ns["u_sha"](path),
         }
     status = {
-        "revision": "korean-panel-v1",
+        "revision": "concise-comparison-v3",
         "distinct_trials": 65,
         "equations": 9,
         "archive": "passed",
@@ -98,24 +195,26 @@ def main(evidence_zip):
         "main_promoted": False,
         "overall_physics_approved": False,
         "imported_history_not_fresh_validation": True,
+        "submitted_colab_runs": imported,
+        "current_edit_scope": "Comparison presentation only; submitted numerical and Qwen checks predate these edits",
     }
     ns["u_json"](data / "validation/status.json", status)
     ns["u_json"](
         data / "validation/current.json",
         {
-            "latest_run": "validation/patch_local.json" if fresh.exists() else None,
-            "scope": "See per-check runtime, source hashes and not_run markers; Colab frontend pending",
+            "latest_run": baseline_current["latest_run"],
+            "current_local_check": (
+                "validation/form_local.json" if form_check.exists() else None
+            ),
+            "submitted_runs": [item["latest_run"] for item in imported],
+            "scope": "Submitted Colab runs preserve their executed revision. Current presentation checks are recorded separately.",
         },
     )
-    allowed = {
-        "unified_manifest.json",
-        "README.md",
-        "provenance/distribution_source.json",
-        "validation/status.json",
-        "validation/current.json",
-    }
+    allowed = replaced | {"unified_manifest.json"}
     unchanged = [
-        n for n in originals if n not in allowed and not n.startswith("source_snapshot/")
+        n
+        for n in originals
+        if n not in allowed and not n.startswith("source_snapshot/")
     ]
     for name in unchanged:
         if ns["u_sha"](data / name) != originals[name]:
@@ -130,6 +229,8 @@ def main(evidence_zip):
     public += [
         notebook,
         ROOT / "docs/V3_RELEASE_CHECKLIST.md",
+        ROOT / "docs/V3_COLAB_TEST_PLAN.md",
+        ROOT / "docs/V3_RELEASE_NOTES.md",
         ROOT / ".github/workflows/v3-source.yml",
     ]
     public += [
@@ -139,6 +240,8 @@ def main(evidence_zip):
             "review_v3_source.py",
             "test_v3_interface.py",
             "package_v3.py",
+            "audit_v3_checks.py",
+            "prepare_v3_publish.py",
             "test_v3_wave_handoff.py",
         ]
     ]
@@ -147,7 +250,8 @@ def main(evidence_zip):
             z.write(p, p.relative_to(ROOT).as_posix())
         z.writestr("README.md", (ROOT / "README.md").read_text(encoding="utf-8"))
         z.writestr(
-            "RELEASE_ASSET.txt", "실행 노트북과 V3_Results.zip을 MyDrive/PINN에 함께 둡니다.\n"
+            "RELEASE_ASSET.txt",
+            "실행 노트북과 V3_Results.zip을 MyDrive/PINN에 함께 둡니다.\n",
         )
     ns["u_json"](
         output / "V3_Release_Checksums.json",
@@ -160,6 +264,7 @@ def main(evidence_zip):
                 "bytes": target.stat().st_size,
                 "original_payloads_preserved": len(unchanged),
                 "summary_unchanged": "summary.json" in unchanged,
+                "submitted_colab_runs_preserved": len(imported),
                 "imported_qwen_and_rules_preserved": all(
                     k in unchanged
                     for k in ["validation/actual_llm.json", "validation/rules_api.json"]
@@ -173,4 +278,6 @@ def main(evidence_zip):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--evidence-zip", required=True)
-    main(parser.parse_args().evidence_zip)
+    parser.add_argument("--validation-zip", action="append", default=[])
+    args = parser.parse_args()
+    main(args.evidence_zip, args.validation_zip)

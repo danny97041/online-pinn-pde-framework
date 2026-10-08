@@ -28,7 +28,9 @@ def release_model_check(root):
             exact = runtime["candidate_field"](eq, points.astype(float))
         prediction = np.concatenate(
             [
-                np.asarray(predictor(eq, arm, seed, points[i : i + 1024])["prediction"], float)
+                np.asarray(
+                    predictor(eq, arm, seed, points[i : i + 1024])["prediction"], float
+                )
                 for i in range(0, len(points), 1024)
             ]
         )
@@ -41,7 +43,8 @@ def release_model_check(root):
             l2 = float(
                 np.max(
                     np.sqrt(
-                        np.sum((prediction - exact) ** 2, axis=0) / np.sum(exact**2, axis=0)
+                        np.sum((prediction - exact) ** 2, axis=0)
+                        / np.sum(exact**2, axis=0)
                     )
                 )
             )
@@ -56,7 +59,11 @@ def release_model_check(root):
                 "passed": bool(np.isclose(l2, row["field_l2"], rtol=1e-3, atol=1e-6)),
             }
         )
-        if len(rows) % 10 == 0 or len(rows) == len(summary["rows"]) or not rows[-1]["passed"]:
+        if (
+            len(rows) % 10 == 0
+            or len(rows) == len(summary["rows"])
+            or not rows[-1]["passed"]
+        ):
             print(
                 "모델 검사",
                 len(rows),
@@ -146,7 +153,10 @@ def release_lhs_boundary_check(root):
 def release_wave_resume_check(root, scratch):
     """Historical Wave Adam resume: compare two disposable next updates."""
     root, scratch = Path(root), Path(scratch)
-    source, parent_zip = root / "inputs/wave_source.zip", root / "inputs/wave_parent.zip"
+    source, parent_zip = (
+        root / "inputs/wave_source.zip",
+        root / "inputs/wave_parent.zip",
+    )
     if not source.exists() or not parent_zip.exists():
         return {
             "status": "not_run",
@@ -159,14 +169,22 @@ def release_wave_resume_check(root, scratch):
         z.extractall(parent)
     ns = load_wave_training(source, release_settings("wave2d"))
     ns["configure_normalization"](
-        parent, ns["wave2d_config"], ns["SOURCE_ARRAYS"], ns["PROTOCOL"], allow_new=False
+        parent,
+        ns["wave2d_config"],
+        ns["SOURCE_ARRAYS"],
+        ns["PROTOCOL"],
+        allow_new=False,
     )
     arm, seed = "baseline", 3234
     trial = parent / "trials" / f"seed_{seed}_{arm}"
     report = json.loads((trial / "result.json").read_text(encoding="utf-8"))
-    first = release_wave_checkpoint_state(ns, ns["wave2d_config"], arm, seed, trial, parent)
+    first = release_wave_checkpoint_state(
+        ns, ns["wave2d_config"], arm, seed, trial, parent
+    )
     before = ns["state_values"](first)
-    second = release_wave_checkpoint_state(ns, ns["wave2d_config"], arm, seed, trial, parent)
+    second = release_wave_checkpoint_state(
+        ns, ns["wave2d_config"], arm, seed, trial, parent
+    )
     ns["assert_same_state"](before, ns["state_values"](second))
     next_iteration = report["last"]["iteration"] + 1
     arrays, evidence = ns["training_lhs"](
@@ -185,7 +203,8 @@ def release_wave_resume_check(root, scratch):
         ns["cross_stepper"](state)(
             data,
             ns["tf"].constant(
-                ns["w8_weights"](arm, next_iteration - 1, state[2].numpy()), ns["tf"].float32
+                ns["w8_weights"](arm, next_iteration - 1, state[2].numpy()),
+                ns["tf"].float32,
             ),
         )
     ns["assert_same_state"](ns["state_values"](first), ns["state_values"](second))
@@ -218,7 +237,7 @@ def release_inspection(root, scratch_base, request):
     scratch = Path(scratch_base) / ("v3_check_" + run_id)
     scratch.mkdir(parents=True)
     report = {
-        "revision": "korean-panel-v1",
+        "revision": "concise-comparison-v3",
         "run_id": run_id,
         "input_summary_sha256": u_sha(Path(root) / "summary.json"),
         "source_hashes": globals().get("V3_EXECUTED_SOURCE_HASHES", {}),
@@ -235,7 +254,10 @@ def release_inspection(root, scratch_base, request):
     }
     stages = {
         "rules_or_llm_api": lambda: release_evaluate(
-            root, request["use_llm"], request["dense_rag"]
+            root,
+            request["use_llm"],
+            request["dense_rag"],
+            request.get("custom_questions", []),
         )
     }
     if request["check_models"]:
@@ -293,7 +315,9 @@ def release_inspection(root, scratch_base, request):
         for k in ["candidate_new_resume", "wave_adam_resume"]
     )
     report["training_executed"] = (
-        True if report["trial_optimizer_updates"] > 0 else (None if failed_training else False)
+        True
+        if report["trial_optimizer_updates"] > 0
+        else (None if failed_training else False)
     )
     report["update_count_scope"] = (
         "Completed probe reports only; failed probes may have executed unreported updates"

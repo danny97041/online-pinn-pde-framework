@@ -23,7 +23,9 @@ def load_wave_inference():
     import numpy as np
 
     SUPPORTED_CODE = "1f1b147ec669ec1322cb9671be016d444f3b60031a097ca7982fcf199bef3877"
-    SUPPORTED_SOURCE = "bfa82fe6c50742180eab37b42d73a5c7a25f879e0132313cde7db0f002136564"
+    SUPPORTED_SOURCE = (
+        "bfa82fe6c50742180eab37b42d73a5c7a25f879e0132313cde7db0f002136564"
+    )
     ARMS = ["baseline", "loss_sa", "ff", "ff_loss_sa", "ff_curriculum"]
     AUDIT_POLICY = {
         "version": "wave-common-physics-v1",
@@ -98,7 +100,9 @@ def load_wave_inference():
         with zipfile.ZipFile(source) as z:
             audit_zip_members(z)
             config = json.loads(z.read("config/wave2d_config.json"))
-            with np.load(io.BytesIO(z.read("training/wave2d_data.npz")), allow_pickle=False) as a:
+            with np.load(
+                io.BytesIO(z.read("training/wave2d_data.npz")), allow_pickle=False
+            ) as a:
                 arrays = {k: a[k].copy() for k in a.files}
         with zipfile.ZipFile(parent) as z:
             names = audit_zip_members(z)
@@ -109,7 +113,9 @@ def load_wave_inference():
             for name, digest in manifest.items():
                 if hashlib.sha256(z.read(name)).hexdigest() != digest:
                     raise ValueError("Checksum mismatch: " + name)
-            contract, summary = [json.loads(z.read(n + ".json")) for n in ("contract", "summary")]
+            contract, summary = [
+                json.loads(z.read(n + ".json")) for n in ("contract", "summary")
+            ]
             if (
                 contract.get("experiment") != "wave_crosslr"
                 or contract.get("code_sha256") != SUPPORTED_CODE
@@ -120,7 +126,10 @@ def load_wave_inference():
                 or (set(contract.get("arms", {})) != set(ARMS))
             ):
                 raise ValueError("Unsupported benchmark contract")
-            if summary.get("status") != "complete" or summary.get("completed_trials") != 15:
+            if (
+                summary.get("status") != "complete"
+                or summary.get("completed_trials") != 15
+            ):
                 raise ValueError("Complete 15-trial benchmark required")
             reports = []
             for seed in contract["seeds"]:
@@ -137,7 +146,9 @@ def load_wave_inference():
                         or (b.get("seed") != seed)
                         or (
                             b["parent_result_sha256"]
-                            != hashlib.sha256(z.read(folder + "/result.json")).hexdigest()
+                            != hashlib.sha256(
+                                z.read(folder + "/result.json")
+                            ).hexdigest()
                         )
                     ):
                         raise ValueError("Trial provenance mismatch")
@@ -148,7 +159,9 @@ def load_wave_inference():
                         if name not in names:
                             raise ValueError("Missing model weights")
                     expected = (
-                        b["candidate"] if b["decision"]["selected"] == "candidate" else b["before"]
+                        b["candidate"]
+                        if b["decision"]["selected"] == "candidate"
+                        else b["before"]
                     )
                     if b["selected"] != expected:
                         raise ValueError("Selected metric provenance mismatch")
@@ -157,7 +170,9 @@ def load_wave_inference():
 
     def audit_bounds(config):
         d = config["domain"]
-        return np.array([[d[a + "_min"], d[a + "_max"]] for a in ("x", "y", "t")], dtype=np.float64)
+        return np.array(
+            [[d[a + "_min"], d[a + "_max"]] for a in ("x", "y", "t")], dtype=np.float64
+        )
 
     def audit_exact(x, config):
         x = np.asarray(x, dtype=np.float64)
@@ -187,7 +202,9 @@ def load_wave_inference():
             raise ValueError("Positive Wave coefficient required")
         kx, ky = (np.pi * e["kx"], np.pi * e["ky"])
         omega = e["wave_speed"] * math.sqrt(e["lambda_target"] * (kx * kx + ky * ky))
-        space2 = audit_trig_mean_square(kx, *bounds[0]) * audit_trig_mean_square(ky, *bounds[1])
+        space2 = audit_trig_mean_square(kx, *bounds[0]) * audit_trig_mean_square(
+            ky, *bounds[1]
+        )
         u2 = space2 * audit_trig_mean_square(omega, *bounds[2], cosine=True)
         v2 = omega**2 * space2 * audit_trig_mean_square(omega, *bounds[2])
         ic2 = space2 * np.cos(omega * bounds[2, 0]) ** 2
@@ -206,8 +223,12 @@ def load_wave_inference():
         axes = [lo + (q + 1) * (hi - lo) / 2 for lo, hi in bounds]
         xyz = np.stack(np.meshgrid(*axes, indexing="ij"), axis=-1).reshape(-1, 3)
         weights = (w[:, None, None] * w[None, :, None] * w[None, None, :] / 8).ravel()
-        observed = math.sqrt(float(np.dot(weights, audit_exact(xyz, config)["utt"] ** 2)))
-        if not np.isclose(observed, scales["residual_rms_scale"], rtol=1e-11, atol=1e-12):
+        observed = math.sqrt(
+            float(np.dot(weights, audit_exact(xyz, config)["utt"] ** 2))
+        )
+        if not np.isclose(
+            observed, scales["residual_rms_scale"], rtol=1e-11, atol=1e-12
+        ):
             raise RuntimeError("Analytic/quadrature normalization mismatch")
         return {
             **scales,
@@ -245,7 +266,10 @@ def load_wave_inference():
                 x[:, axis] = bounds[axis, side]
                 points[name + ("_min" if side == 0 else "_max")] = x.astype(np.float32)
         x, y = np.meshgrid(
-            *[np.linspace(*bounds[i], AUDIT_POLICY["initial_shape"][i]) for i in (0, 1)],
+            *[
+                np.linspace(*bounds[i], AUDIT_POLICY["initial_shape"][i])
+                for i in (0, 1)
+            ],
             indexing="ij",
         )
         points["initial"] = np.column_stack(
@@ -263,18 +287,27 @@ def load_wave_inference():
         return h.hexdigest()
 
     def audit_within(value, threshold):
-        return bool(value <= threshold or np.isclose(value, threshold, rtol=1e-12, atol=0))
+        return bool(
+            value <= threshold or np.isclose(value, threshold, rtol=1e-12, atol=0)
+        )
 
     def audit_residual_stats(residual, scale):
         r = np.asarray(residual, dtype=np.float64).ravel()
-        if not r.size or not np.isfinite(r).all() or (not np.isfinite(scale)) or (scale <= 0):
+        if (
+            not r.size
+            or not np.isfinite(r).all()
+            or (not np.isfinite(scale))
+            or (scale <= 0)
+        ):
             raise ValueError("Invalid residual/scale")
         n = np.abs(r) / scale
         rms, p99 = (float(np.sqrt(np.mean(n * n))), float(np.quantile(n, 0.99)))
         grade = "NOT_MET"
         for name in ("basic", "strict"):
             limit = AUDIT_POLICY[name]
-            if audit_within(rms, limit["rms"]) and audit_within(p99, limit["p99_absolute"]):
+            if audit_within(rms, limit["rms"]) and audit_within(
+                p99, limit["p99_absolute"]
+            ):
                 grade = name.upper()
         return {
             "raw_mse": float(np.mean(r * r)),
@@ -308,7 +341,9 @@ def load_wave_inference():
                 else None
             ),
             "mse": float(np.mean(delta**2)),
-            "rmse_over_global_field_scale": float(np.sqrt(np.mean(delta**2)) / global_scale),
+            "rmse_over_global_field_scale": float(
+                np.sqrt(np.mean(delta**2)) / global_scale
+            ),
             "maximum_absolute_error": float(np.max(np.abs(delta))),
         }
 
@@ -339,7 +374,11 @@ def load_wave_inference():
         return (
             "STRICT"
             if all((g == "STRICT" for g in grades))
-            else "BASIC" if all((g in ("STRICT", "BASIC") for g in grades)) else "NOT_MET"
+            else (
+                "BASIC"
+                if all((g in ("STRICT", "BASIC") for g in grades))
+                else "NOT_MET"
+            )
         )
 
     def audit_regional(x, u, exact, residual, config, scales):
@@ -355,7 +394,9 @@ def load_wave_inference():
                         {
                             "sector": [i, j, k],
                             "count": int(mask.sum()),
-                            "field": audit_field_stats(u[mask], exact[mask], scales["field_rms"]),
+                            "field": audit_field_stats(
+                                u[mask], exact[mask], scales["field_rms"]
+                            ),
                             "residual_true": audit_residual_stats(
                                 residual[mask], scales["residual_rms_scale"]
                             ),
@@ -389,12 +430,16 @@ def load_wave_inference():
             model_cfg = model_config["model"]
             domain_cfg = model_config["domain"]
             equation_cfg = model_config["equation"]
-            self.wave_speed_squared = tf.constant(equation_cfg["wave_speed"] ** 2, dtype=tf.float32)
+            self.wave_speed_squared = tf.constant(
+                equation_cfg["wave_speed"] ** 2, dtype=tf.float32
+            )
             self.lb = tf.constant(
-                [domain_cfg["x_min"], domain_cfg["y_min"], domain_cfg["t_min"]], dtype=tf.float32
+                [domain_cfg["x_min"], domain_cfg["y_min"], domain_cfg["t_min"]],
+                dtype=tf.float32,
             )
             self.ub = tf.constant(
-                [domain_cfg["x_max"], domain_cfg["y_max"], domain_cfg["t_max"]], dtype=tf.float32
+                [domain_cfg["x_max"], domain_cfg["y_max"], domain_cfg["t_max"]],
+                dtype=tf.float32,
             )
             self.hidden_layers = [
                 tf.keras.layers.Dense(
@@ -414,7 +459,9 @@ def load_wave_inference():
             self.lambda_1 = self.add_weight(
                 name="lambda_1",
                 shape=(),
-                initializer=tf.keras.initializers.Constant(equation_cfg["lambda_initial"]),
+                initializer=tf.keras.initializers.Constant(
+                    equation_cfg["lambda_initial"]
+                ),
                 trainable=True,
                 dtype=tf.float32,
             )
@@ -431,11 +478,17 @@ def load_wave_inference():
             x_value = X[:, 0:1]
             y_value = X[:, 1:2]
             t_value = X[:, 2:3]
-            with tf.GradientTape(persistent=True, watch_accessed_variables=False) as tape2:
+            with tf.GradientTape(
+                persistent=True, watch_accessed_variables=False
+            ) as tape2:
                 tape2.watch([x_value, y_value, t_value])
-                with tf.GradientTape(persistent=True, watch_accessed_variables=False) as tape1:
+                with tf.GradientTape(
+                    persistent=True, watch_accessed_variables=False
+                ) as tape1:
                     tape1.watch([x_value, y_value, t_value])
-                    prediction = self(tf.concat([x_value, y_value, t_value], axis=1), training=True)
+                    prediction = self(
+                        tf.concat([x_value, y_value, t_value], axis=1), training=True
+                    )
                 u_x = tape1.gradient(prediction, x_value)
                 u_y = tape1.gradient(prediction, y_value)
                 u_t = tape1.gradient(prediction, t_value)
@@ -455,7 +508,9 @@ def load_wave_inference():
             if self.use_fourier:
                 generator = np.random.default_rng(fourier_seed)
                 matrix = generator.normal(
-                    loc=0.0, scale=fourier_cfg["scale"], size=(3, fourier_cfg["feature_count"])
+                    loc=0.0,
+                    scale=fourier_cfg["scale"],
+                    size=(3, fourier_cfg["feature_count"]),
                 ).astype(np.float32)
                 self.fourier_matrix = tf.constant(matrix, dtype=tf.float32)
             else:
@@ -466,7 +521,9 @@ def load_wave_inference():
             normalized = 2.0 * (X - self.lb) / (self.ub - self.lb) - 1.0
             if self.use_fourier:
                 projection = 2.0 * np.pi * tf.matmul(normalized, self.fourier_matrix)
-                hidden = tf.concat([normalized, tf.sin(projection), tf.cos(projection)], axis=1)
+                hidden = tf.concat(
+                    [normalized, tf.sin(projection), tf.cos(projection)], axis=1
+                )
             else:
                 hidden = normalized
             for layer in self.hidden_layers:
@@ -535,7 +592,9 @@ def load_wave_inference():
     import tensorflow as tf
 
     def audit_model_digest(model):
-        return audit_digest_arrays({str(i): v.numpy() for i, v in enumerate(model.variables)})
+        return audit_digest_arrays(
+            {str(i): v.numpy() for i, v in enumerate(model.variables)}
+        )
 
     def audit_load_model(config, contract, arm, seed, archive, member, scratch):
         spec = contract["arms"][arm]
@@ -573,7 +632,9 @@ def load_wave_inference():
 
     def audit_evaluator(model):
 
-        @tf.function(input_signature=[tf.TensorSpec([None, 3], tf.float32)], autograph=False)
+        @tf.function(
+            input_signature=[tf.TensorSpec([None, 3], tf.float32)], autograph=False
+        )
         def derivative(points):
             return audit_derivative_eager(model, points)
 
@@ -645,19 +706,25 @@ def load_wave_inference():
 
     def audit_reload_check(model, derivative, expected, arrays, config, scales):
         reference = audit_field_stats(
-            audit_predict(model, arrays["X_exact"]), arrays["u_exact"], scales["field_rms"]
+            audit_predict(model, arrays["X_exact"]),
+            arrays["u_exact"],
+            scales["field_rms"],
         )
         for key in ("relative_l2", "mse"):
             audit_assert_close(
                 reference[key], expected["reference_metrics"][key], "reference " + key
             )
-        audit_assert_close(float(model.lambda_1.numpy()), expected["lambda_1"], "lambda")
+        audit_assert_close(
+            float(model.lambda_1.numpy()), expected["lambda_1"], "lambda"
+        )
         physical = {}
         for split in ("val", "test"):
             out = audit_evaluate(derivative, arrays["X_collocation_" + split])
             r = (
                 out[:, 2]
-                - float(model.lambda_1.numpy()) * config["equation"]["wave_speed"] ** 2 * out[:, 3]
+                - float(model.lambda_1.numpy())
+                * config["equation"]["wave_speed"] ** 2
+                * out[:, 3]
             )
             physical[split] = float(np.mean(r * r))
             audit_assert_close(
@@ -697,7 +764,8 @@ def load_wave_inference():
         ):
             indices = np.argsort(np.abs(values))[-20:][::-1]
             result["worst_points"][name] = [
-                {"xyz_t": x[i].astype(float).tolist(), "value": float(values[i])} for i in indices
+                {"xyz_t": x[i].astype(float).tolist(), "value": float(values[i])}
+                for i in indices
             ]
         result["sectors_equal_volume_3x3x3"] = audit_regional(
             x, out[:, 0], exact, residuals["true"], config, scales
@@ -710,7 +778,9 @@ def load_wave_inference():
                 result["time_slices"].append(
                     {
                         "time": float(t),
-                        "field": audit_field_stats(out[mask, 0], exact[mask], scales["field_rms"]),
+                        "field": audit_field_stats(
+                            out[mask, 0], exact[mask], scales["field_rms"]
+                        ),
                         "residual_true": audit_residual_stats(
                             residuals["true"][mask], scales["residual_rms_scale"]
                         ),
@@ -724,7 +794,10 @@ def load_wave_inference():
         probe_x = points["lhs"][:19]
         probe = audit_evaluate(derivative, probe_x)
         split_probe = np.concatenate(
-            [audit_evaluate(derivative, probe_x[:7]), audit_evaluate(derivative, probe_x[7:])]
+            [
+                audit_evaluate(derivative, probe_x[:7]),
+                audit_evaluate(derivative, probe_x[7:]),
+            ]
         )
         np.testing.assert_allclose(probe, split_probe, rtol=0.0002, atol=0.0002)
         builtin = (
@@ -735,10 +808,14 @@ def load_wave_inference():
         )
         independent = (
             probe[:, 2]
-            - float(model.lambda_1.numpy()) * config["equation"]["wave_speed"] ** 2 * probe[:, 3]
+            - float(model.lambda_1.numpy())
+            * config["equation"]["wave_speed"] ** 2
+            * probe[:, 3]
         )
         np.testing.assert_allclose(independent, builtin, rtol=0.001, atol=0.0001)
-        reload = audit_reload_check(model, derivative, expected, source_arrays, config, scales)
+        reload = audit_reload_check(
+            model, derivative, expected, source_arrays, config, scales
+        )
         coefficient = float(model.lambda_1.numpy())
         results = {}
         for name in ("grid", "lhs"):
@@ -748,7 +825,11 @@ def load_wave_inference():
         for name in ("x_min", "x_max", "y_min", "y_max", "initial"):
             out = audit_evaluate(derivative, points[name])
             exact = audit_exact(points[name], config)
-            scale = scales["initial_displacement_rms"] if name == "initial" else scales["field_rms"]
+            scale = (
+                scales["initial_displacement_rms"]
+                if name == "initial"
+                else scales["field_rms"]
+            )
             error = np.abs(out[:, 0] - exact["u"]) / scale
             constraints[name] = {
                 "normalized_rms": float(np.sqrt(np.mean(error**2))),
@@ -773,7 +854,9 @@ def load_wave_inference():
             **results,
             "constraints": constraints,
             "lambda": coefficient,
-            "lambda_relative_error": abs(coefficient - config["equation"]["lambda_target"])
+            "lambda_relative_error": abs(
+                coefficient - config["equation"]["lambda_target"]
+            )
             / abs(config["equation"]["lambda_target"]),
             "model_state_unchanged": True,
             "reload_check": reload,
@@ -786,9 +869,12 @@ def load_wave_inference():
 
     def audit_make_score(adam, selected):
         field = audit_score(
-            adam["grid"]["field"]["relative_l2"], selected["grid"]["field"]["relative_l2"]
+            adam["grid"]["field"]["relative_l2"],
+            selected["grid"]["field"]["relative_l2"],
         )
-        coefficient = audit_score(adam["lambda_relative_error"], selected["lambda_relative_error"])
+        coefficient = audit_score(
+            adam["lambda_relative_error"], selected["lambda_relative_error"]
+        )
         return {
             "field": field,
             "lambda": coefficient,
@@ -812,7 +898,9 @@ def load_wave_inference():
                 "score_min": min(total),
                 "score_max": max(total),
                 "selected_field_l2_mean": float(
-                    np.mean([r["selected"]["grid"]["field"]["relative_l2"] for r in group])
+                    np.mean(
+                        [r["selected"]["grid"]["field"]["relative_l2"] for r in group]
+                    )
                 ),
                 "selected_lambda_error_mean": float(
                     np.mean([r["selected"]["lambda_relative_error"] for r in group])
@@ -830,7 +918,9 @@ def load_wave_inference():
                 ),
             }
         return {
-            "status": "evaluated_pending_integrity" if len(rows) == 15 else "in_progress",
+            "status": (
+                "evaluated_pending_integrity" if len(rows) == 15 else "in_progress"
+            ),
             "completed_trials": len(rows),
             "training_executed": False,
             "optimizer_updates": 0,
@@ -911,14 +1001,18 @@ def load_wave_inference():
                 "domain": config["domain"],
             },
         )
-        audit_json(output_root / "wiring.json", audit_exact_probe(config, points, scales))
+        audit_json(
+            output_root / "wiring.json", audit_exact_probe(config, points, scales)
+        )
         print(
             "Normalization PASS; common R0 =",
             format(scales["residual_rms_scale"], ".10g"),
             flush=True,
         )
         rows = []
-        with zipfile.ZipFile(parent) as archive, tempfile.TemporaryDirectory() as scratch:
+        with zipfile.ZipFile(
+            parent
+        ) as archive, tempfile.TemporaryDirectory() as scratch:
             for index, report in enumerate(reports, 1):
                 seed, arm = (report["seed"], report["arm"])
                 folder = f"trials/seed_{seed}_{arm}"
@@ -931,7 +1025,9 @@ def load_wave_inference():
                         report["post"]["selected"],
                     ),
                 ):
-                    model = audit_load_model(config, contract, arm, seed, archive, member, scratch)
+                    model = audit_load_model(
+                        config, contract, arm, seed, archive, member, scratch
+                    )
                     stages[stage] = audit_stage(
                         model, config, points, scales, expected, source_arrays
                     )
@@ -941,7 +1037,9 @@ def load_wave_inference():
                     "arm": arm,
                     "seed": seed,
                     "adam_iteration": report["adam"]["last"]["iteration"],
-                    "lbfgs_accepted_iterations": report["post"]["solver"]["accepted_iterations"],
+                    "lbfgs_accepted_iterations": report["post"]["solver"][
+                        "accepted_iterations"
+                    ],
                     "lbfgs_objective_evaluations": report["post"]["solver"][
                         "objective_evaluations"
                     ],
@@ -952,7 +1050,9 @@ def load_wave_inference():
                 audit_json(output_root / "trials" / f"seed_{seed}_{arm}.json", row)
                 summary = audit_summary(rows)
                 audit_json(output_root / "summary.json", summary)
-                (output_root / "REPORT.md").write_text(audit_markdown(summary), encoding="utf-8")
+                (output_root / "REPORT.md").write_text(
+                    audit_markdown(summary), encoding="utf-8"
+                )
                 audit_pack(output_root, output_zip)
                 print(
                     f"[{index}/15] {seed} {arm}: score {row['score']['total']}/6; PDE {row['score']['pde_grade']}",
@@ -969,7 +1069,8 @@ def load_wave_inference():
         audit_json(output_root / "summary.json", summary)
         audit_pack(output_root, output_zip)
         print(
-            "Complete: 15 trials / 30 saved model stages. Submit ZIP only:", Path(output_zip).name
+            "Complete: 15 trials / 30 saved model stages. Submit ZIP only:",
+            Path(output_zip).name,
         )
         return summary
 

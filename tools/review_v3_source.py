@@ -37,7 +37,8 @@ class IgnoreDescriptionStrings(ast.NodeTransformer):
                 report_start = (
                     isinstance(statement, ast.Assign)
                     and any(
-                        isinstance(t, ast.Name) and t.id == "lines" for t in statement.targets
+                        isinstance(t, ast.Name) and t.id == "lines"
+                        for t in statement.targets
                     )
                 ) or (
                     isinstance(statement, ast.Expr)
@@ -74,36 +75,77 @@ def main(baseline_zip):
             equivalence[name] = computational_ast(old) == computational_ast(new)
         for name in ["services.py", "natural_language.py"]:
             unchanged_planner[name] = (
-                archive.read("source_snapshot/" + name) == (ROOT / "v3" / name).read_bytes()
+                ast.dump(ast.parse(archive.read("source_snapshot/" + name).decode("utf-8")), include_attributes=False)
+                == ast.dump(ast.parse((ROOT / "v3" / name).read_text(encoding="utf-8")), include_attributes=False)
             )
     assert all(equivalence.values()), equivalence
-    assert all(unchanged_planner.values()), unchanged_planner
+    # Natural-language presentation is intentionally extended in this revision.
+    # Protect Qwen intent classification and the allowlisted service implementation.
+    with zipfile.ZipFile(previous) as archive:
+        old_nl = ast.parse(
+            archive.read("source_snapshot/natural_language.py").decode("utf-8")
+        )
+    new_nl = ast.parse((ROOT / "v3/natural_language.py").read_text(encoding="utf-8"))
+    protected_nl = ["un_llm_ask", "un_local_llm", "un_equations"]
+    intent_equivalence = {
+        name: ast.dump(
+            next(
+                n
+                for n in old_nl.body
+                if isinstance(n, ast.FunctionDef) and n.name == name
+            ),
+            include_attributes=False,
+        )
+        == ast.dump(
+            next(
+                n
+                for n in new_nl.body
+                if isinstance(n, ast.FunctionDef) and n.name == name
+            ),
+            include_attributes=False,
+        )
+        for name in protected_nl
+    }
+    assert unchanged_planner["services.py"] and all(intent_equivalence.values())
     for path in FILES:
         compile(path.read_text(encoding="utf-8"), str(path), "exec")
     report = {
-        "scope": "한국어 조건부 설정·파일명·검사 흐름 수정. 보고서 표시를 제외한 수치 집계와 학습 수식·일정은 보존. 새 검사는 별도 런타임 보고서로 판정.",
+        "scope": "커널 타이머 대체 경로·하단 위젯 갱신·직접 질문·한국어 답변·사용자 시험 문항 추가. 보고서 표시를 제외한 수치 집계와 학습 수식·일정, Qwen 의도 판단과 검색 경로는 보존. 새 검사는 별도 런타임 보고서로 판정.",
         "python_files_reviewed": len(FILES),
         "syntax_compilation": "passed",
         "numerical_ast_unchanged": equivalence,
         "report_presentation_excluded_from_ast_comparison": True,
         "new_checkpoint_factory_hook_excluded_from_ast_comparison": True,
-        "planner_and_hybrid_rag_source_byte_unchanged": unchanged_planner,
+        "planner_and_hybrid_rag_ast_unchanged": unchanged_planner,
+        "qwen_intent_functions_ast_unchanged": intent_equivalence,
         "runtime_verification": "pending",
         "training_executed": False,
         "changes": [
+            "일반 비교 답변과 보고서의 반복 안내 축약; 필요한 질문의 확인·추가 설명은 유지",
+            "상단 최초 기능·파일 위치 선택, 60초 무입력 기본 조회와 하단 설정 연동",
             "사용자 안내와 비교 보고서를 한국어로 정리",
-            "한국어 선택형 설정과 조건별 활성화, 결과 탭 이동",
+            "분리된 정의 셀은 기본 접힘, 하단 드롭다운 실행 패널과 바로 아래 결과 표시",
+            "Drive 인증 실패 상태 표시, 명시적 재연결·로컬 ZIP 전환",
+            "대표 노트북 안내를 공개 배포용 기능 설명과 실행 절차로 정리",
             "결과·검사·학습 ZIP 파일명을 단순화하고 긴 이름 입력도 지원",
             "모델 전수·Wave 재개·LHS 경계 검사를 선택 실행으로 통합",
             "개인 작업 메모와 승격 절차를 개발자 문서로 분리",
-            "보고서 수치 집계·학습 일정·샘플링·언어 모델 및 검색 소스 보존",
+            "보고서 수치 집계·학습 일정·샘플링·Qwen 의도 판단·검색 경로 보존; 자연어 응답 표현과 추가 시험 기록은 변경",
+            "Colab 브라우저 콜백 타이머와 하단 안전 기본 조회 버튼 추가; 일반 노트북의 커널 타이머는 유지",
+            "자동 파일 위치에서 연결된 Drive·로컬 ZIP이 없을 때 연결 1회 시도; 화면 버전 안내 문구 제거",
         ],
-        "files_sha256": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in FILES},
+        "files_sha256": {
+            p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in FILES
+        },
     }
     target = ROOT / "outputs/V3_Source_Text_Review.json"
-    target.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    target.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     print(
-        json.dumps({k: v for k, v in report.items() if k != "files_sha256"}, ensure_ascii=False)
+        json.dumps(
+            {k: v for k, v in report.items() if k != "files_sha256"}, ensure_ascii=False
+        )
     )
 
 

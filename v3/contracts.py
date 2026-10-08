@@ -68,7 +68,8 @@ def u_json(path, value):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8"
+        json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
+        encoding="utf-8",
     )
 
 
@@ -101,7 +102,11 @@ def u_verify_zip(path, manifest=None):
         keys = (
             [manifest]
             if manifest
-            else ["unified_manifest.json", "periodic_manifest.json", "audit_manifest.json"]
+            else [
+                "unified_manifest.json",
+                "periodic_manifest.json",
+                "audit_manifest.json",
+            ]
         )
         key = next((k for k in keys if k in names), None)
         if key is None:
@@ -170,7 +175,10 @@ def u_cycle(iteration):
 
 def u_lrs(completed):
     return [
-        float(np.interp(completed, U_POLICY["lr_knots"], U_POLICY[k]) * U_POLICY["base_lr"])
+        float(
+            np.interp(completed, U_POLICY["lr_knots"], U_POLICY[k])
+            * U_POLICY["base_lr"]
+        )
         for k in ["network_ratios", "coefficient_ratios"]
     ]
 
@@ -200,8 +208,11 @@ def u_target(history):
     if len(rows) < consecutive:
         return False
     rows = rows[-consecutive:]
-    return np.diff([r["iteration"] for r in rows]).tolist() == [every] * (consecutive - 1) and all(
-        np.isfinite(r["validation_l2"]) and r["validation_l2"] <= U_POLICY["field_target"]
+    return np.diff([r["iteration"] for r in rows]).tolist() == [every] * (
+        consecutive - 1
+    ) and all(
+        np.isfinite(r["validation_l2"])
+        and r["validation_l2"] <= U_POLICY["field_target"]
         for r in rows
     )
 
@@ -289,20 +300,26 @@ def u_import_wave(parent, audit, root):
                 ("post", f"postprocess/trials/seed_{r['seed']}_{r['arm']}/result.json"),
             ]:
                 detail = json.loads(z.read(member))
-                u_json(root / f"evidence/{kind}_seed_{r['seed']}_{r['arm']}.json", detail)
+                u_json(
+                    root / f"evidence/{kind}_seed_{r['seed']}_{r['arm']}.json", detail
+                )
                 if kind == "adam":
                     rows[-1]["adam_seconds_including_diagnostics"] = detail["last"].get(
                         "elapsed_seconds"
                     )
-                    rows[-1]["trainable_parameters"] = detail.get("trainable_parameters")
+                    rows[-1]["trainable_parameters"] = detail.get(
+                        "trainable_parameters"
+                    )
                 else:
                     rows[-1]["lbfgs_objective_evaluations"] = detail["solver"][
                         "objective_evaluations"
                     ]
-                    rows[-1]["lbfgs_seconds_including_diagnostics"] = detail["solver"].get(
-                        "elapsed_seconds"
-                    )
-        if len(rows) != 15 or pairs != {(s, a) for s in [3234, 3235, 3236] for a in U_ARMS}:
+                    rows[-1]["lbfgs_seconds_including_diagnostics"] = detail[
+                        "solver"
+                    ].get("elapsed_seconds")
+        if len(rows) != 15 or pairs != {
+            (s, a) for s in [3234, 3235, 3236] for a in U_ARMS
+        }:
             raise ValueError("Wave trial inventory mismatch")
         u_json(root / "evidence/wave_contract.json", c)
         u_json(root / "evidence/wave_summary.json", summary)
@@ -322,11 +339,18 @@ def u_import_wave(parent, audit, root):
             if s.get("status") != "complete" or s.get("completed_model_stages") != 30:
                 raise ValueError("Incomplete physics audit")
             for row in rows:
-                trial = json.loads(z.read(f"trials/seed_{row['seed']}_{row['arm']}.json"))
+                trial = json.loads(
+                    z.read(f"trials/seed_{row['seed']}_{row['arm']}.json")
+                )
                 row["pde_grade"] = trial["score"]["pde_grade"]
-                u_json(root / f"evidence/physics_seed_{row['seed']}_{row['arm']}.json", trial)
+                u_json(
+                    root / f"evidence/physics_seed_{row['seed']}_{row['arm']}.json",
+                    trial,
+                )
             u_json(root / "evidence/physics_summary.json", s)
-            u_json(root / "evidence/physics_policy.json", json.loads(z.read("policy.json")))
+            u_json(
+                root / "evidence/physics_policy.json", json.loads(z.read("policy.json"))
+            )
             u_json(
                 root / "evidence/physics_normalization.json",
                 json.loads(z.read("normalization.json")),
@@ -343,7 +367,9 @@ def u_report(root, rows, modules, routes):
     groups = []
     rows = [dict(r) for r in rows]
     for r in rows:
-        r["field_attainment_points"] = u_quantity_score(r.get("adam_field_l2"), r.get("field_l2"))
+        r["field_attainment_points"] = u_quantity_score(
+            r.get("adam_field_l2"), r.get("field_l2")
+        )
         r["coefficient_attainment_points"] = u_quantity_score(
             r.get("adam_lambda_error"), r.get("lambda_error")
         )
@@ -361,7 +387,9 @@ def u_report(root, rows, modules, routes):
             if not subset:
                 continue
             fields = [r["field_l2"] for r in subset]
-            coeff = [r["lambda_error"] for r in subset if r.get("lambda_error") is not None]
+            coeff = [
+                r["lambda_error"] for r in subset if r.get("lambda_error") is not None
+            ]
             groups.append(
                 {
                     "equation": eq,
@@ -371,14 +399,20 @@ def u_report(root, rows, modules, routes):
                     "field_l2_sample_std": (
                         float(np.std(fields, ddof=1)) if len(fields) > 1 else None
                     ),
-                    "mean_adam_updates": float(np.mean([r["adam_iteration"] for r in subset])),
+                    "mean_adam_updates": float(
+                        np.mean([r["adam_iteration"] for r in subset])
+                    ),
                     "mean_lbfgs_objective_evaluations": (
-                        float(np.mean([r["lbfgs_objective_evaluations"] for r in subset]))
+                        float(
+                            np.mean([r["lbfgs_objective_evaluations"] for r in subset])
+                        )
                         if all("lbfgs_objective_evaluations" in r for r in subset)
                         else None
                     ),
                     "field_10pct_count": sum(v <= 0.10 for v in fields),
-                    "coefficient_10pct_count": sum(v <= 0.10 for v in coeff) if coeff else None,
+                    "coefficient_10pct_count": (
+                        sum(v <= 0.10 for v in coeff) if coeff else None
+                    ),
                     "lambda_error_mean": float(np.mean(coeff)) if coeff else None,
                     "score_mean_out_of_6": (
                         float(np.mean([r["score_out_of_6"] for r in subset]))
@@ -441,7 +475,7 @@ def u_report(root, rows, modules, routes):
     return summary
 
 
-def u_report_markdown(root, groups, modules=None):
+def u_report_markdown(root, groups, modules=None, details=False):
     """수치 집계를 바꾸지 않고 사용자용 비교 보고서를 한국어로 표시합니다."""
     equations = {
         "wave2d": "2차원 파동",
@@ -465,8 +499,6 @@ def u_report_markdown(root, groups, modules=None):
         "# 온라인 PINN PDE 프레임워크 V3 — 실험 비교",
         "",
         f"{len({r['equation'] for r in groups})}개 방정식의 저장 실험 결과를 비교합니다. 표의 오차는 백분율입니다.",
-        "10%는 연구용 물리장 오차 목표이며 산업 인증이나 전체 물리 정확도 승인을 의미하지 않습니다.",
-        "Wave의 과거 5% 중단 이력은 보존하며 새 10% 목표 실험으로 바꾸어 표시하지 않습니다.",
         "",
         "| 방정식 | 방법 | 시드 수 | 평균 물리장 L2 오차 (%) | 10% 이하 실험 수 | 평균 계수 오차 (%) |",
         "| --- | --- | ---: | ---: | ---: | ---: |",
@@ -483,18 +515,17 @@ def u_report_markdown(root, groups, modules=None):
             f"| {equation} | {method} | {row['n']} | {100 * row['field_l2_mean']:.4f} | "
             f"{row['field_10pct_count']}/{row['n']} | {coefficient} |"
         )
-    lines += [
-        "",
-        "## 결과 해석의 범위",
-        "",
-        "- Adam과 선택 후처리 결과는 개별 실험 JSON에서 구분합니다. 동일 비용의 우월성을 추론하지 않습니다.",
-        "- Wave 비교표와 도달 점수는 저장된 참조 격자를 사용합니다. 물리 감사는 별도의 고정 진단 격자를 사용합니다.",
-        "- 서로 다른 방정식의 PDE 잔차 원값은 단위와 정규화 척도가 달라 직접 순위화하지 않습니다.",
-        "- 순방향 문제의 계수 점수는 해당 없음이며 자동 만점이 아닙니다.",
-        "- 경계·초기조건 및 국소 최악점의 합격 판정은 별도 검증 대상입니다.",
-        "- 해석해로 생성한 합성 학습값은 실제 공학 관측 데이터와 동일하지 않습니다.",
-        "- 저장된 실험의 검사 이력과 현재 실행한 검사는 구분해야 합니다.",
-    ]
+    if details:
+        lines += [
+            "",
+            "## 비교 기준",
+            "",
+            "- Adam과 선택 후처리 결과는 개별 실험 JSON에서 구분합니다. 계산 비용도 함께 확인할 수 있습니다.",
+            "- Wave의 과거 5% 중단 이력과 참조 격자, 별도 물리 진단 격자는 보존합니다.",
+            "- 서로 다른 방정식의 PDE 잔차 원값은 단위와 정규화 척도가 달라 직접 비교하지 않습니다.",
+            "- 순방향 문제에는 계수 추정 오차가 없습니다.",
+            "- 저장된 검사 이력과 현재 실행한 검사는 구분합니다.",
+        ]
     (Path(root) / "REPORT.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -514,7 +545,9 @@ def u_pick(folder, label, predicate):
             print(f"{i}: {p.name}")
         if not paths:
             raise FileNotFoundError("No matching ZIP in PINN for " + label)
-        raw = input("Number / filename; Enter=only candidate; rescan / cancel: ").strip()
+        raw = input(
+            "Number / filename; Enter=only candidate; rescan / cancel: "
+        ).strip()
         if raw == "cancel":
             raise RuntimeError("Cancelled")
         if raw == "rescan":

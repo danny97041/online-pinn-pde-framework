@@ -75,12 +75,22 @@ def release_request(values):
     if action not in V3_ACTION_LABELS:
         raise ValueError("목록에서 사용할 기능을 선택하세요.")
     filename = values.get("zip", "")
-    if not filename or Path(filename).name != filename or "/" in filename or "\\" in filename:
+    if (
+        not filename
+        or Path(filename).name != filename
+        or "/" in filename
+        or "\\" in filename
+    ):
         raise ValueError("ZIP은 파일 목록에서 선택하세요.")
     request = {"action": action, "zip": filename}
     if action in {"predict", "train"}:
         eq, arm, seed = values.get("equation"), values.get("arm"), values.get("seed")
-        if eq not in U_PROBLEMS or arm not in U_ARMS or type(seed) is not int or seed < 0:
+        if (
+            eq not in U_PROBLEMS
+            or arm not in U_ARMS
+            or type(seed) is not int
+            or seed < 0
+        ):
             raise ValueError("방정식·방법·시드 선택을 확인하세요.")
         request.update(equation=eq, arm=arm, seed=seed)
     if action == "predict":
@@ -97,13 +107,20 @@ def release_request(values):
         )
     if action == "agent":
         question = values.get("question", "").strip()
-        if not question or len(question) > 4000:
-            raise ValueError("질문은 1~4000자로 입력하세요.")
+        if not question or len(question) > 2000:
+            raise ValueError("질문은 1~2000자로 입력하세요.")
         request["question"] = question
     if action == "evaluate":
+        custom = values.get("custom_questions", "")
+        if not isinstance(custom, str):
+            raise ValueError("추가 질문은 한 줄에 한 문항씩 입력하세요.")
+        questions = [q.strip() for q in custom.splitlines() if q.strip()]
+        if len(questions) > 10 or any(len(q) > 2000 for q in questions):
+            raise ValueError("추가 질문은 최대 10문항, 문항당 2000자입니다.")
         request.update(
             check_models=bool(values.get("check_models", False)),
             check_training=bool(values.get("check_training", False)),
+            custom_questions=questions,
         )
     if action == "train":
         s = release_settings(request["equation"])
@@ -112,7 +129,9 @@ def release_request(values):
             raise ValueError("새 학습 또는 재개를 선택하세요.")
         overrides = dict(values.get("overrides", {}))
         if set(overrides) - set(s):
-            raise ValueError("알 수 없는 학습 설정: " + str(sorted(set(overrides) - set(s))))
+            raise ValueError(
+                "알 수 없는 학습 설정: " + str(sorted(set(overrides) - set(s)))
+            )
         # Architecture/data/SA settings belong to new runs only. Resume inherits
         # immutable fields from its saved parent inside release_execute.
         allowed = {
@@ -172,12 +191,17 @@ def release_execute(request, folder, scratch_base):
     root = scratch_base / ("v3_view_" + uuid.uuid4().hex[:8])
     summary = release_open(bundle, root)
     action = request["action"]
-    print("목적:", V3_ACTION_LABELS[action], "/ 저장 실험", summary["completed_trials"], "개")
+    print(
+        "목적:",
+        V3_ACTION_LABELS[action],
+        "/ 저장 실험",
+        summary["completed_trials"],
+        "개",
+    )
     if action == "results":
+        # Regenerate presentation in this disposable extracted copy, not the input ZIP.
+        u_report_markdown(root, summary["aggregate"])
         display(Markdown((root / "REPORT.md").read_text(encoding="utf-8")))
-        print(
-            "검사 기록은 결과 ZIP의 validation/에서 실행 당시 코드와 함께 확인할 수 있습니다."
-        )
     elif action == "predict":
         print(
             release_predictor(root)(
@@ -227,10 +251,16 @@ def release_execute(request, folder, scratch_base):
             elif request["equation"] == "wave2d":
                 raise ValueError("이 ZIP에는 Wave Adam 재개 상태가 없습니다.")
             parent = {"root": parent_root, "settings": copy.deepcopy(s)}
-        s.update(execution=request["execution"], seed=request["seed"], arms=[request["arm"]])
+        s.update(
+            execution=request["execution"], seed=request["seed"], arms=[request["arm"]]
+        )
         s.update(request["overrides"])
         s = release_validate_settings(s, parent["settings"] if parent else None)
-        display(Markdown("```json\n" + json.dumps(s, ensure_ascii=False, indent=2) + "\n```"))
+        display(
+            Markdown(
+                "```json\n" + json.dumps(s, ensure_ascii=False, indent=2) + "\n```"
+            )
+        )
         if not request["training_enabled"]:
             print("설정 확인만 완료했습니다. ‘학습 실행 허용’을 켜야 학습합니다.")
             return {"status": "settings_only", "settings": s}
@@ -243,21 +273,31 @@ def release_execute(request, folder, scratch_base):
     return summary
 
 
-def release_panel(folder, scratch_base):
-    """Return a two-tab widget; no model import or training on construction."""
+def release_panel(
+    folder, scratch_base, storage_status=None, initial_action="results", show=True
+):
+    """Compact conditional dropdown settings, with results directly underneath."""
     import ipywidgets as w
     from IPython.display import display
 
-    style = {"description_width": "150px"}
+    style = {"description_width": "145px"}
 
     def control(cls, label, **kwargs):
-        return cls(description=label, style=style, layout=w.Layout(width="95%"), **kwargs)
+        return cls(
+            description=label, style=style, layout=w.Layout(width="100%"), **kwargs
+        )
 
     controls = {
+        "folder": control(w.Text, "파일이 있는 폴더", value=str(folder)),
         "action": control(
-            w.Dropdown, "사용할 기능", options=[(v, k) for k, v in V3_ACTION_LABELS.items()]
+            w.Dropdown,
+            "사용할 기능",
+            options=[(v, k) for k, v in V3_ACTION_LABELS.items()],
+            value=initial_action,
         ),
-        "zip": control(w.Dropdown, "통합 결과 ZIP", options=release_zip_choices(folder)),
+        "zip": control(
+            w.Dropdown, "통합 결과 ZIP", options=release_zip_choices(folder)
+        ),
         "equation": control(
             w.Dropdown,
             "방정식",
@@ -270,12 +310,21 @@ def release_panel(folder, scratch_base):
         "seed": control(w.IntText, "시드", value=3234),
         "points": control(w.Textarea, "예측 좌표 (JSON)", value="[[0.25, 0.65]]"),
         "question": control(
-            w.Textarea, "질문", value="Poisson에서 방법별 물리장 오차를 비교해줘"
+            w.Textarea,
+            "직접 입력할 질문",
+            value="Poisson에서 방법별 물리장 오차를 비교해줘",
+            placeholder="결과 비교, 좌표 예측, 계산, 근거 검색 또는 학습 설정 초안을 자유롭게 질문하세요.",
         ),
         "use_llm": control(w.Checkbox, "Qwen 사용", value=False),
         "dense_rag": control(w.Checkbox, "E5 + BM25 검색", value=False),
         "check_models": control(w.Checkbox, "저장 모델 전수 검사", value=False),
         "check_training": control(w.Checkbox, "재개·LHS 경계 검사", value=False),
+        "custom_questions": control(
+            w.Textarea,
+            "추가 시험 질문",
+            value="",
+            placeholder="선택 사항 · 한 줄에 한 문항, 최대 10문항. 답변 의미는 직접 확인해야 합니다.",
+        ),
         "execution": control(
             w.Dropdown,
             "학습 시작 방식",
@@ -312,7 +361,9 @@ def release_panel(folder, scratch_base):
     defaults = release_settings("poisson2d")
     settings_controls = {
         key: control(
-            w.IntText if type(defaults[key]) is int else w.FloatText, label, value=defaults[key]
+            w.IntText if type(defaults[key]) is int else w.FloatText,
+            label,
+            value=defaults[key],
         )
         for key, label in labels.items()
     }
@@ -331,34 +382,79 @@ def release_panel(folder, scratch_base):
         if RESULTS_FILENAME in controls["zip"].options
         else controls["zip"].value
     )
-    output = w.Output()
+    output = w.Output(layout=w.Layout(width="100%"))
     notice = w.HTML()
     run = w.Button(description="선택한 기능 실행", button_style="primary")
-    go = w.Button(description="결과 화면으로 이동")
-    refresh = w.Button(description="ZIP 목록 새로고침")
+    refresh = w.Button(description="ZIP 목록 새로고침", icon="refresh")
+    connect = w.Button(description="Drive 연결", icon="cloud")
+    local = w.Button(description="로컬 ZIP 사용", icon="folder-open")
+    storage_notice = w.HTML()
+    run.icon = "play"
+    run.layout.width = "190px"
     advanced = w.Accordion(
-        children=[w.VBox(list(settings_controls.values()) + list(arrays_controls.values()))]
-    )
-    advanced.set_title(0, "추가 학습 설정 — 펼쳐서 수정")
-    advanced.selected_index = None
-    panel = w.VBox(
-        [
-            w.HTML(
-                "<h3>설정</h3><p>필요한 항목만 표시됩니다. 기본 기능은 저장 결과 조회이며 학습하지 않습니다.</p>"
-            ),
-            controls["action"],
-            controls["zip"],
-            refresh,
-            *[v for k, v in controls.items() if k not in {"action", "zip"}],
-            advanced,
-            notice,
-            w.HBox([run, go]),
+        children=[
+            w.GridBox(
+                list(settings_controls.values()) + list(arrays_controls.values()),
+                layout=w.Layout(
+                    grid_template_columns="repeat(auto-fit, minmax(320px, 1fr))",
+                    grid_gap="8px 16px",
+                ),
+            )
         ]
     )
-    tabs = w.Tab(children=[panel, output])
-    tabs.set_title(0, "설정")
-    tabs.set_title(1, "결과 · 실행 로그")
-    state = {"last_result": None, "last_error": None}
+    advanced.set_title(0, "상세 학습 설정")
+    advanced.selected_index = None
+    folder_options = w.Accordion(
+        children=[
+            w.VBox(
+                [
+                    controls["folder"],
+                    storage_notice,
+                    w.HBox(
+                        [connect, local],
+                        layout=w.Layout(flex_flow="row wrap", gap="8px"),
+                    ),
+                ]
+            )
+        ]
+    )
+    folder_options.set_title(0, "저장소 · 파일 위치")
+    folder_options.selected_index = None
+    grid_layout = lambda: w.Layout(
+        grid_template_columns="repeat(auto-fit, minmax(320px, 1fr))",
+        grid_gap="8px 16px",
+        width="100%",
+    )
+    header = w.HTML(
+        "<h3 style='margin-bottom:6px'>설정</h3>"
+        "<p style='margin-top:0'>선택 기능에 해당하는 설정만 표시됩니다. 기본 기능: 저장 결과 조회.</p>"
+    )
+    panel = w.VBox(
+        [
+            header,
+            w.GridBox([controls["action"], controls["zip"]], layout=grid_layout()),
+            folder_options,
+            w.GridBox(
+                [
+                    v
+                    for k, v in controls.items()
+                    if k not in {"action", "zip", "folder"}
+                ],
+                layout=grid_layout(),
+            ),
+            advanced,
+            notice,
+            w.HBox([run, refresh], layout=w.Layout(flex_flow="row wrap", gap="8px")),
+        ],
+        layout=w.Layout(width="100%", max_width="1150px"),
+    )
+    results_header = w.HTML("<hr><h3>결과 · 실행 로그</h3>")
+    dashboard = w.VBox([panel, results_header, output], layout=w.Layout(width="100%"))
+    state = {
+        "last_result": None,
+        "last_error": None,
+        "storage": dict(storage_status or {"status": "local"}),
+    }
     visible = set()
 
     def update(_=None):
@@ -366,8 +462,12 @@ def release_panel(folder, scratch_base):
         if _ is not None:
             # A changed action/model/parent needs a fresh training opt-in.
             controls["training_enabled"].value = False
-        a, arm, eq = controls["action"].value, controls["arm"].value, controls["equation"].value
-        visible = {"action", "zip"}
+        a, arm, eq = (
+            controls["action"].value,
+            controls["arm"].value,
+            controls["equation"].value,
+        )
+        visible = {"action", "zip", "folder"}
         if a in {"predict", "train"}:
             visible |= {"equation", "arm", "seed"}
         if a == "predict":
@@ -377,7 +477,7 @@ def release_panel(folder, scratch_base):
         if a == "agent":
             visible |= {"question"}
         if a == "evaluate":
-            visible |= {"check_models", "check_training"}
+            visible |= {"check_models", "check_training", "custom_questions"}
         if a == "train":
             visible |= {"execution", "training_enabled"}
             if controls["execution"].value == "resume":
@@ -422,27 +522,96 @@ def release_panel(folder, scratch_base):
             widget.layout.display = "" if key in active else "none"
         advanced.layout.display = "" if a == "train" else "none"
         notice.value = {
-            "evaluate": "<p>자연어 30문항 + 별도 표현 15문항 / API 검사. 전수 검사와 재개 검사는 선택 사항입니다.</p>",
+            "agent": "<p>직접 작성한 질문을 한국어 문장으로 답합니다. 수치는 저장 결과·계산 도구에서 가져오며 자료가 없으면 추가 질문을 요청합니다. 학습·파일 삭제는 질문으로 실행하지 않습니다.</p>",
+            "evaluate": "<p>자연어 30문항 + 별도 표현 15문항 / API 검사. 추가 질문은 답변·안전한 도구 호출을 기록하며 의미 정확도는 수동 확인합니다. 전수 검사와 재개 검사는 선택 사항입니다.</p>",
             "train": "<p>완료 결과는 변경하지 않습니다. 재개 시 모델·샘플링 설정은 저장값을 상속하며 미완료 실험은 세션 종료 시 소실될 수 있습니다.</p>",
             "predict": "<p>좌표 순서와 영역: 선택 방정식의 x/y/t 구성에 맞추세요. 잘못된 차원·영역은 실행 시 거절됩니다.</p>",
         }.get(a, "")
 
     def refresh_choices(_):
-        names = release_zip_choices(folder)
+        names = release_zip_choices(controls["folder"].value)
         previous = controls["zip"].value
         controls["zip"].options = names
         if previous in names:
             controls["zip"].value = previous
+        elif RESULTS_FILENAME in names:
+            controls["zip"].value = RESULTS_FILENAME
+        else:
+            controls["zip"].value = names[0] if len(names) == 1 else None
         controls["resume_zip"].options = [("선택한 통합 결과에서 재개", "")] + [
-            (n, n) for n in release_zip_choices(folder, True)
+            (n, n) for n in release_zip_choices(controls["folder"].value, True)
         ]
+
+    def show_storage_status():
+        status = state["storage"]["status"]
+        messages = {
+            "connected": "Drive 연결됨. ZIP 위치: MyDrive/PINN.",
+            "local": "로컬 저장소. Colab 로컬 파일과 출력은 세션 종료 시 유실될 수 있습니다.",
+            "authentication_failed": "Drive 인증 실패. 재연결 또는 로컬 ZIP 사용이 필요합니다.",
+            "connection_failed": "Drive 연결 실패. 저장소 상태 확인이 필요합니다.",
+            "unavailable": "현재 환경에서는 Colab Drive 연결을 사용할 수 없습니다.",
+            "not_ready": "Drive 연결 후 MyDrive 경로가 확인되지 않았습니다.",
+            "not_connected": "Drive 미연결. ‘Drive 연결’ 또는 ‘로컬 ZIP 사용’을 선택하세요.",
+        }
+        storage_notice.value = (
+            "<p>" + messages.get(status, "저장소 연결 미완료.") + "</p>"
+        )
+        needs_file = status not in {"connected", "local"} or not controls["zip"].value
+        if needs_file:
+            folder_options.selected_index = 0
+        lines = [messages.get(status, "저장소 연결 미완료.")]
+        if state["storage"].get("error_type"):
+            lines.append("연결 오류 유형: " + state["storage"]["error_type"])
+        if needs_file:
+            lines.extend(
+                [
+                    "선택 ZIP 없음. 파일 위치: " + controls["folder"].value,
+                    "대체 경로: Colab 왼쪽 파일 패널에 V3_Results.zip 업로드 → ‘로컬 ZIP 사용’.",
+                ]
+            )
+        if status != "connected":
+            lines.append("로컬 출력 ZIP은 세션 종료 전에 다운로드가 필요합니다.")
+        output.outputs = ()
+        output.append_stdout("\n".join(lines) + "\n")
+
+    def connect_drive(_=None, target_folder=None):
+        connect.disabled = local.disabled = run.disabled = refresh.disabled = True
+        state["last_result"] = None
+        state["last_error"] = None
+        try:
+            state["storage"] = release_drive_status()
+            if state["storage"]["status"] == "connected":
+                controls["folder"].value = (
+                    target_folder or "/content/drive/MyDrive/PINN"
+                )
+                refresh_choices(None)
+            show_storage_status()
+        finally:
+            connect.disabled = local.disabled = run.disabled = refresh.disabled = False
+
+    def use_local(_=None):
+        state["last_result"] = None
+        state["last_error"] = None
+        controls["folder"].value = str(
+            Path("/content") if Path("/content").is_dir() else Path(scratch_base)
+        )
+        state["storage"] = {"status": "local"}
+        refresh_choices(None)
+        show_storage_status()
 
     def execute(_=None):
         run.disabled = True
-        tabs.selected_index = 1
+        refresh.disabled = True
+        connect.disabled = local.disabled = True
+        state["last_result"] = None
         with output:
             output.clear_output(wait=True)
             try:
+                selected_folder = Path(controls["folder"].value)
+                if not selected_folder.is_dir():
+                    raise FileNotFoundError(
+                        "파일 위치를 확인하고 ZIP 목록을 새로고침하세요."
+                    )
                 values = {k: v.value for k, v in controls.items() if k in visible}
                 values["overrides"] = {
                     k: v.value for k, v in settings_controls.items() if not v.disabled
@@ -455,28 +624,73 @@ def release_panel(folder, scratch_base):
                     }
                 )
                 request = release_request(values)
-                state["last_result"] = release_execute(request, folder, scratch_base)
+                for widget in [
+                    *controls.values(),
+                    *settings_controls.values(),
+                    *arrays_controls.values(),
+                ]:
+                    widget.disabled = True
+                state["last_result"] = release_execute(
+                    request, selected_folder, scratch_base
+                )
                 state["last_error"] = None
             except Exception as exc:
                 state["last_error"] = {"type": type(exc).__name__, "message": str(exc)}
                 print("실행하지 못했습니다:", type(exc).__name__, str(exc))
-                print("설정 탭에서 항목을 확인하세요. 입력 결과 ZIP은 변경하지 않았습니다.")
+                print(
+                    "입력 ZIP은 변경되지 않았습니다. 실행 설정과 파일 위치 확인이 필요합니다."
+                )
             finally:
+                update()
                 run.disabled = False
+                refresh.disabled = False
+                connect.disabled = local.disabled = False
 
-    for key in ["action", "arm", "equation", "execution", "zip"]:
+    def auto_results():
+        """Publish captured read-only output without relying on a comm parent ID."""
+        if controls["action"].value != "results":
+            return
+        from IPython.utils.capture import capture_output
+
+        with capture_output() as captured:
+            execute()
+        output.outputs = ()
+        if captured.stdout:
+            output.append_stdout(captured.stdout)
+        for item in captured.outputs:
+            output.outputs += (
+                {
+                    "output_type": "display_data",
+                    "data": item.data,
+                    "metadata": item.metadata,
+                },
+            )
+        if captured.stderr:
+            output.append_stderr(captured.stderr)
+
+    for key in ["action", "arm", "equation", "execution", "zip", "folder"]:
         controls[key].observe(update, names="value")
     run.on_click(execute)
-    go.on_click(lambda _: setattr(tabs, "selected_index", 1))
     refresh.on_click(refresh_choices)
+    connect.on_click(connect_drive)
+    local.on_click(use_local)
     update()
-    display(tabs)
+    if show:
+        display(dashboard)
+    show_storage_status()
     return {
-        "tabs": tabs,
+        "dashboard": dashboard,
+        "output": output,
+        "advanced": advanced,
+        "run_button": run,
         "controls": controls,
         "settings": settings_controls,
         "arrays": arrays_controls,
         "execute": execute,
+        "auto_results": auto_results,
         "refresh": refresh_choices,
+        "connect_drive": connect_drive,
+        "use_local": use_local,
+        "show_storage_status": show_storage_status,
         "state": state,
     }

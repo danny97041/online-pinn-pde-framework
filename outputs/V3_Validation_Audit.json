@@ -1,0 +1,192 @@
+{
+  "scope": "Submitted Colab run records; current presentation edits require separate local checks",
+  "passed": true,
+  "archives": [
+    {
+      "filename": "V3_Check_1b70d87f.zip",
+      "sha256": "6ad10ab131e693f46f9685e1b97d202b63bf4bede5d715b0342a3ce0d85ed2e2",
+      "latest_run": "validation/runs/1b124c59.json",
+      "revision": "auto-storage-connect-v3",
+      "passed": true,
+      "requested": {
+        "action": "evaluate",
+        "zip": "V3_Results.zip",
+        "use_llm": true,
+        "dense_rag": true,
+        "check_models": false,
+        "check_training": false,
+        "custom_questions": []
+      },
+      "environment": {
+        "python": "3.13.15",
+        "platform": "Linux",
+        "numpy": "2.1.3",
+        "tensorflow_version_equality_required": false,
+        "tensorflow": "2.21.0"
+      },
+      "stored_trials": 65,
+      "equations": 9,
+      "source_hashes": {
+        "contracts.py": "ae09d07ddb8035f91d8b0678ea30c917c6b3312110bcfc56ca163fa52aa0e710",
+        "equations.py": "1a29b5226343df9bc8bdaca6fcb0920b1342cec23a4326ccaa070a8a3a3984a8",
+        "natural_language.py": "705e85c19c7fc84f266217352c8eee8c7758aae94655f2cad9b4ae0e3795a87e",
+        "services.py": "fc017805d7226d4f00cbbc9b578b187e2ac4d127d94479d129e8d162e3b2c37d",
+        "distribution.py": "7648a98aa038e1fbd01884a465af06265e7c1cf87373dceab073444a4fea391c",
+        "candidate_runtime.py": "9266876a46199393a74f9319aec7670c87923ca22f389694334bbfb0675260e7",
+        "wave_inference.py": "c9e7733aeb358be5baa26166b0e76b411388f1508bbef362befde103a1f5cfec",
+        "wave_runtime.py": "c7af4b8be0e01535e79c842c4152fbe88bf58e4699a5c01b7832e1090bf50d72",
+        "verification.py": "85d34c8ce9c2653da15a602d5f62f0c717b27f8599f3dd5e62e12d54d9c95d2e",
+        "session.py": "b632d0a596e91c4f191f415cf7c2769aa8f962671e8c0b68b00bbf40ae35f392",
+        "interface.py": "a11bed8096e4da7ba0e18abd1519def534e7ea49e31a417457fd843220b4b0b4"
+      },
+      "executed_source_matches_zip_snapshot": {
+        "contracts.py": true,
+        "equations.py": true,
+        "natural_language.py": true,
+        "services.py": true,
+        "distribution.py": true,
+        "candidate_runtime.py": true,
+        "wave_inference.py": true,
+        "wave_runtime.py": true,
+        "verification.py": false,
+        "session.py": false,
+        "interface.py": false
+      },
+      "executed_source_matches_current_local": {
+        "contracts.py": false,
+        "equations.py": true,
+        "natural_language.py": false,
+        "services.py": true,
+        "distribution.py": true,
+        "candidate_runtime.py": true,
+        "wave_inference.py": true,
+        "wave_runtime.py": true,
+        "verification.py": false,
+        "session.py": true,
+        "interface.py": false
+      },
+      "checks": {
+        "rules_or_llm_api": {
+          "passed": true,
+          "status": "passed"
+        }
+      },
+      "language": {
+        "model": "Qwen/Qwen3.5-0.8B",
+        "retrieval_backend": "BM25 + multilingual-e5-small exact inner product + weighted RRF (V1/V2 0.6/0.4, k=60)",
+        "main_questions": 30,
+        "heldout_questions": 15,
+        "custom_questions": 0,
+        "llm_calls": 42,
+        "intent_agreements": 27,
+        "controller_corrections": 15,
+        "api_passed": true
+      },
+      "disposable_optimizer_updates": 0
+    },
+    {
+      "filename": "V3_Check_7a4c0860.zip",
+      "sha256": "eceecb27ceeb6d72771a984913fa8702fd878e1787f2380c47b74350995ac129",
+      "latest_run": "validation/runs/0bacdb8c.json",
+      "revision": "auto-storage-connect-v3",
+      "passed": true,
+      "requested": {
+        "action": "evaluate",
+        "zip": "V3_Results.zip",
+        "use_llm": false,
+        "dense_rag": true,
+        "check_models": true,
+        "check_training": true,
+        "custom_questions": []
+      },
+      "environment": {
+        "python": "3.13.15",
+        "platform": "Linux",
+        "numpy": "2.1.3",
+        "tensorflow_version_equality_required": false,
+        "tensorflow": "2.21.0"
+      },
+      "stored_trials": 65,
+      "equations": 9,
+      "source_hashes": {
+        "contracts.py": "ae09d07ddb8035f91d8b0678ea30c917c6b3312110bcfc56ca163fa52aa0e710",
+        "equations.py": "1a29b5226343df9bc8bdaca6fcb0920b1342cec23a4326ccaa070a8a3a3984a8",
+        "natural_language.py": "705e85c19c7fc84f266217352c8eee8c7758aae94655f2cad9b4ae0e3795a87e",
+        "services.py": "fc017805d7226d4f00cbbc9b578b187e2ac4d127d94479d129e8d162e3b2c37d",
+        "distribution.py": "7648a98aa038e1fbd01884a465af06265e7c1cf87373dceab073444a4fea391c",
+        "candidate_runtime.py": "9266876a46199393a74f9319aec7670c87923ca22f389694334bbfb0675260e7",
+        "wave_inference.py": "c9e7733aeb358be5baa26166b0e76b411388f1508bbef362befde103a1f5cfec",
+        "wave_runtime.py": "c7af4b8be0e01535e79c842c4152fbe88bf58e4699a5c01b7832e1090bf50d72",
+        "verification.py": "85d34c8ce9c2653da15a602d5f62f0c717b27f8599f3dd5e62e12d54d9c95d2e",
+        "session.py": "b632d0a596e91c4f191f415cf7c2769aa8f962671e8c0b68b00bbf40ae35f392",
+        "interface.py": "a11bed8096e4da7ba0e18abd1519def534e7ea49e31a417457fd843220b4b0b4"
+      },
+      "executed_source_matches_zip_snapshot": {
+        "contracts.py": true,
+        "equations.py": true,
+        "natural_language.py": true,
+        "services.py": true,
+        "distribution.py": true,
+        "candidate_runtime.py": true,
+        "wave_inference.py": true,
+        "wave_runtime.py": true,
+        "verification.py": false,
+        "session.py": false,
+        "interface.py": false
+      },
+      "executed_source_matches_current_local": {
+        "contracts.py": false,
+        "equations.py": true,
+        "natural_language.py": false,
+        "services.py": true,
+        "distribution.py": true,
+        "candidate_runtime.py": true,
+        "wave_inference.py": true,
+        "wave_runtime.py": true,
+        "verification.py": false,
+        "session.py": true,
+        "interface.py": false
+      },
+      "checks": {
+        "rules_or_llm_api": {
+          "passed": true,
+          "status": "passed"
+        },
+        "saved_models": {
+          "passed": true,
+          "status": "passed"
+        },
+        "candidate_new_resume": {
+          "passed": true,
+          "status": "passed"
+        },
+        "wave_adam_resume": {
+          "passed": true,
+          "status": "passed"
+        },
+        "lhs_boundary": {
+          "passed": true,
+          "status": "passed"
+        }
+      },
+      "language": {
+        "model": null,
+        "retrieval_backend": "BM25 + multilingual-e5-small exact inner product + weighted RRF (V1/V2 0.6/0.4, k=60)",
+        "main_questions": 30,
+        "heldout_questions": 15,
+        "custom_questions": 0,
+        "llm_calls": 0,
+        "intent_agreements": 0,
+        "controller_corrections": 0,
+        "api_passed": true
+      },
+      "disposable_optimizer_updates": 8,
+      "saved_model_predictions": 65
+    }
+  ],
+  "executed_source_notebook": {
+    "filename": "V3_Validation_Source.ipynb",
+    "sha256": "2a46e3fdaa298172502acab2e7eb490c2de458be7695e1b5c254f2c89f69f8b3",
+    "all_module_hashes_match": true
+  }
+}

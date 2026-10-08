@@ -20,7 +20,9 @@ def load_wave_training(BUNDLE, settings=None):
         raise RuntimeError("TensorFlow runtime mismatch")
     tf.keras.utils.set_random_seed(3234)
     tf.config.experimental.enable_op_determinism()
-    DEFINITION_SHA256 = "c0a95fe0d927c7303b6b964777a48e9611cca23fde71ec5097761b6f0d58ec11"
+    DEFINITION_SHA256 = (
+        "c0a95fe0d927c7303b6b964777a48e9611cca23fde71ec5097761b6f0d58ec11"
+    )
     RUNTIME_SHA256 = "ce0a383ddcb3ae8ee374c697e30e92cc315044d0338b03d07a33c97ad6d0581c"
 
     class WavePINN2D(tf.keras.Model):
@@ -30,12 +32,16 @@ def load_wave_training(BUNDLE, settings=None):
             model_cfg = model_config["model"]
             domain_cfg = model_config["domain"]
             equation_cfg = model_config["equation"]
-            self.wave_speed_squared = tf.constant(equation_cfg["wave_speed"] ** 2, dtype=tf.float32)
+            self.wave_speed_squared = tf.constant(
+                equation_cfg["wave_speed"] ** 2, dtype=tf.float32
+            )
             self.lb = tf.constant(
-                [domain_cfg["x_min"], domain_cfg["y_min"], domain_cfg["t_min"]], dtype=tf.float32
+                [domain_cfg["x_min"], domain_cfg["y_min"], domain_cfg["t_min"]],
+                dtype=tf.float32,
             )
             self.ub = tf.constant(
-                [domain_cfg["x_max"], domain_cfg["y_max"], domain_cfg["t_max"]], dtype=tf.float32
+                [domain_cfg["x_max"], domain_cfg["y_max"], domain_cfg["t_max"]],
+                dtype=tf.float32,
             )
             self.hidden_layers = [
                 tf.keras.layers.Dense(
@@ -55,7 +61,9 @@ def load_wave_training(BUNDLE, settings=None):
             self.lambda_1 = self.add_weight(
                 name="lambda_1",
                 shape=(),
-                initializer=tf.keras.initializers.Constant(equation_cfg["lambda_initial"]),
+                initializer=tf.keras.initializers.Constant(
+                    equation_cfg["lambda_initial"]
+                ),
                 trainable=True,
                 dtype=tf.float32,
             )
@@ -72,11 +80,17 @@ def load_wave_training(BUNDLE, settings=None):
             x_value = X[:, 0:1]
             y_value = X[:, 1:2]
             t_value = X[:, 2:3]
-            with tf.GradientTape(persistent=True, watch_accessed_variables=False) as tape2:
+            with tf.GradientTape(
+                persistent=True, watch_accessed_variables=False
+            ) as tape2:
                 tape2.watch([x_value, y_value, t_value])
-                with tf.GradientTape(persistent=True, watch_accessed_variables=False) as tape1:
+                with tf.GradientTape(
+                    persistent=True, watch_accessed_variables=False
+                ) as tape1:
                     tape1.watch([x_value, y_value, t_value])
-                    prediction = self(tf.concat([x_value, y_value, t_value], axis=1), training=True)
+                    prediction = self(
+                        tf.concat([x_value, y_value, t_value], axis=1), training=True
+                    )
                 u_x = tape1.gradient(prediction, x_value)
                 u_y = tape1.gradient(prediction, y_value)
                 u_t = tape1.gradient(prediction, t_value)
@@ -96,7 +110,9 @@ def load_wave_training(BUNDLE, settings=None):
             if self.use_fourier:
                 generator = np.random.default_rng(fourier_seed)
                 matrix = generator.normal(
-                    loc=0.0, scale=fourier_cfg["scale"], size=(3, fourier_cfg["feature_count"])
+                    loc=0.0,
+                    scale=fourier_cfg["scale"],
+                    size=(3, fourier_cfg["feature_count"]),
                 ).astype(np.float32)
                 self.fourier_matrix = tf.constant(matrix, dtype=tf.float32)
             else:
@@ -107,7 +123,9 @@ def load_wave_training(BUNDLE, settings=None):
             normalized = 2.0 * (X - self.lb) / (self.ub - self.lb) - 1.0
             if self.use_fourier:
                 projection = 2.0 * np.pi * tf.matmul(normalized, self.fourier_matrix)
-                hidden = tf.concat([normalized, tf.sin(projection), tf.cos(projection)], axis=1)
+                hidden = tf.concat(
+                    [normalized, tf.sin(projection), tf.cos(projection)], axis=1
+                )
             else:
                 hidden = normalized
             for layer in self.hidden_layers:
@@ -119,7 +137,9 @@ def load_wave_training(BUNDLE, settings=None):
         with tf.GradientTape(watch_accessed_variables=False) as initial_tape:
             initial_tape.watch(initial_coordinates)
             initial_prediction = model2d(initial_coordinates, training=training)
-        initial_gradient = initial_tape.gradient(initial_prediction, initial_coordinates)
+        initial_gradient = initial_tape.gradient(
+            initial_prediction, initial_coordinates
+        )
         initial_velocity_prediction = initial_gradient[:, 2:3]
         loss_initial_displacement = tf.reduce_mean(
             tf.square(data2d["u_initial"] - initial_prediction)
@@ -129,11 +149,15 @@ def load_wave_training(BUNDLE, settings=None):
         )
         loss_initial = 0.5 * (loss_initial_displacement + loss_initial_velocity)
         boundary_prediction = model2d(data2d["X_boundary"], training=training)
-        loss_boundary = tf.reduce_mean(tf.square(data2d["u_boundary"] - boundary_prediction))
+        loss_boundary = tf.reduce_mean(
+            tf.square(data2d["u_boundary"] - boundary_prediction)
+        )
         residual = model2d.pde_residual(data2d["X_collocation"])
         loss_physics = tf.reduce_mean(tf.square(residual))
         supervised_prediction = model2d(data2d["X_supervised"], training=training)
-        loss_supervised = tf.reduce_mean(tf.square(data2d["u_supervised"] - supervised_prediction))
+        loss_supervised = tf.reduce_mean(
+            tf.square(data2d["u_supervised"] - supervised_prediction)
+        )
         total = (
             wave2d_weights["initial"] * loss_initial
             + wave2d_weights["boundary"] * loss_boundary
@@ -173,7 +197,9 @@ def load_wave_training(BUNDLE, settings=None):
             "initial": constraint,
             "boundary": constraint,
             "physics": physics,
-            "supervised": tf.constant(curriculum["supervised_weight"], dtype=tf.float32),
+            "supervised": tf.constant(
+                curriculum["supervised_weight"], dtype=tf.float32
+            ),
         }
         total = tf.add_n(list(raw.values()))
         return {name: value / total for name, value in raw.items()}
@@ -189,14 +215,20 @@ def load_wave_training(BUNDLE, settings=None):
         )
         weights = clipped / (tf.reduce_mean(clipped) + epsilon)
         weights = tf.stop_gradient(weights)
-        return (tf.reduce_mean(weights * squared), tf.reduce_min(weights), tf.reduce_max(weights))
+        return (
+            tf.reduce_mean(weights * squared),
+            tf.reduce_min(weights),
+            tf.reduce_max(weights),
+        )
 
     def calculate_method_losses(model, data, method_spec, iteration, training=False):
         initial_coordinates = tf.cast(data["X_initial"], tf.float32)
         with tf.GradientTape(watch_accessed_variables=False) as initial_tape:
             initial_tape.watch(initial_coordinates)
             initial_prediction = model(initial_coordinates, training=training)
-        initial_gradient = initial_tape.gradient(initial_prediction, initial_coordinates)
+        initial_gradient = initial_tape.gradient(
+            initial_prediction, initial_coordinates
+        )
         initial_velocity_prediction = initial_gradient[:, 2:3]
         loss_initial_displacement = tf.reduce_mean(
             tf.square(data["u_initial"] - initial_prediction)
@@ -206,17 +238,27 @@ def load_wave_training(BUNDLE, settings=None):
         )
         loss_initial = 0.5 * (loss_initial_displacement + loss_initial_velocity)
         boundary_prediction = model(data["X_boundary"], training=training)
-        loss_boundary = tf.reduce_mean(tf.square(data["u_boundary"] - boundary_prediction))
+        loss_boundary = tf.reduce_mean(
+            tf.square(data["u_boundary"] - boundary_prediction)
+        )
         residual = model.pde_residual(data["X_collocation"])
         if method_spec["self_adaptive"]:
-            loss_physics, adaptive_min, adaptive_max = _self_adaptive_physics_loss(residual)
+            loss_physics, adaptive_min, adaptive_max = _self_adaptive_physics_loss(
+                residual
+            )
         else:
             loss_physics = tf.reduce_mean(tf.square(residual))
             adaptive_min = tf.constant(1.0, dtype=tf.float32)
             adaptive_max = tf.constant(1.0, dtype=tf.float32)
         supervised_prediction = model(data["X_supervised"], training=training)
-        loss_supervised = tf.reduce_mean(tf.square(data["u_supervised"] - supervised_prediction))
-        weights = _curriculum_weights(iteration) if method_spec["curriculum"] else _fixed_weights()
+        loss_supervised = tf.reduce_mean(
+            tf.square(data["u_supervised"] - supervised_prediction)
+        )
+        weights = (
+            _curriculum_weights(iteration)
+            if method_spec["curriculum"]
+            else _fixed_weights()
+        )
         total = (
             weights["initial"] * loss_initial
             + weights["boundary"] * loss_boundary
@@ -288,7 +330,9 @@ def load_wave_training(BUNDLE, settings=None):
     import zipfile
     import numpy as np
 
-    SUPPORTED_EXTENSION_RUNTIME = "f9dd9ff05d8f3e1170e85e4886328b1a723f0d06902b17524634ce143553b758"
+    SUPPORTED_EXTENSION_RUNTIME = (
+        "f9dd9ff05d8f3e1170e85e4886328b1a723f0d06902b17524634ce143553b758"
+    )
 
     def sha256(path):
         digest = hashlib.sha256()
@@ -309,14 +353,27 @@ def load_wave_training(BUNDLE, settings=None):
 
     def safe_relative(name):
         path = PurePosixPath(name)
-        if not name or "\\" in name or ":" in name or path.is_absolute() or (".." in path.parts):
+        if (
+            not name
+            or "\\" in name
+            or ":" in name
+            or path.is_absolute()
+            or (".." in path.parts)
+        ):
             raise ValueError(f"Unsafe artifact path: {name}")
         return path
 
     def comparison_digest(config):
         payload = {
             key: config[key]
-            for key in ("equation", "domain", "model", "data", "loss_weights", "training")
+            for key in (
+                "equation",
+                "domain",
+                "model",
+                "data",
+                "loss_weights",
+                "training",
+            )
         }
         payload["comparison"] = config["method_comparison"]
         return hashlib.sha256(
@@ -337,11 +394,15 @@ def load_wave_training(BUNDLE, settings=None):
                 if entry.external_attr >> 16 & 61440 == 40960:
                     raise ValueError("ZIP symlinks are not supported")
             if sum((i.file_size for i in archive.infolist())) > 512 * 1024 * 1024:
-                raise ValueError("Diagnostic input exceeds the 512 MiB uncompressed limit")
+                raise ValueError(
+                    "Diagnostic input exceeds the 512 MiB uncompressed limit"
+                )
             if archive.testzip() is not None:
                 raise ValueError("ZIP CRC verification failed")
             config = json.loads(archive.read("config/wave2d_config.json"))
-            results = json.loads(archive.read("report_artifacts/wave2d_method_comparison.json"))
+            results = json.loads(
+                archive.read("report_artifacts/wave2d_method_comparison.json")
+            )
             receipt = json.loads(archive.read("workflow/stage_07_validation.json"))
             if (
                 receipt.get("stage") != 7
@@ -351,20 +412,29 @@ def load_wave_training(BUNDLE, settings=None):
                 raise ValueError("Stage 7 completion receipt is invalid")
             required_cells = receipt.get("required_cells", [])
             if not required_cells or any(
-                (receipt.get("cell_status", {}).get(k) != "passed" for k in required_cells)
+                (
+                    receipt.get("cell_status", {}).get(k) != "passed"
+                    for k in required_cells
+                )
             ):
                 raise ValueError("Stage 7 required cells are incomplete")
-            if results.get("status") != "complete" or results.get("protocol_version") != 2:
+            if (
+                results.get("status") != "complete"
+                or results.get("protocol_version") != 2
+            ):
                 raise ValueError("A completed protocol-2 Stage 7 pilot is required")
-            if config.get("execution_profile") != "pilot" or config["method_comparison"][
-                "seeds"
-            ] != [3234]:
+            if config.get("execution_profile") != "pilot" or config[
+                "method_comparison"
+            ]["seeds"] != [3234]:
                 raise ValueError("Expected the one-seed Stage 7 pilot (3234)")
             if results["config_fingerprint"] != comparison_digest(config):
                 raise ValueError("Comparison configuration fingerprint mismatch")
             rows = results["results"]
             expected = {(m, 3234) for m in config["method_comparison"]["methods"]}
-            if len(rows) != len(expected) or {(r["method"], r["seed"]) for r in rows} != expected:
+            if (
+                len(rows) != len(expected)
+                or {(r["method"], r["seed"]) for r in rows} != expected
+            ):
                 raise ValueError("Missing or duplicate pilot trials")
             required = {
                 "config/wave2d_config.json",
@@ -381,7 +451,9 @@ def load_wave_training(BUNDLE, settings=None):
                     "convergence_targets",
                 ):
                     required.add(row["weights"][key])
-                required.update((row["initialization"][key] for key in ("weights", "manifest")))
+                required.update(
+                    (row["initialization"][key] for key in ("weights", "manifest"))
+                )
             for name in required:
                 safe_relative(name)
                 if archive.getinfo(name).file_size == 0:
@@ -394,7 +466,10 @@ def load_wave_training(BUNDLE, settings=None):
                 manifest = json.loads(archive.read(initial["manifest"]))
                 if digest != initial["sha256"] or digest != manifest["sha256"]:
                     raise ValueError("Initialization checksum mismatch")
-                if manifest["seed"] != row["seed"] or manifest["group"] != initial["group"]:
+                if (
+                    manifest["seed"] != row["seed"]
+                    or manifest["group"] != initial["group"]
+                ):
                     raise ValueError("Initialization identity mismatch")
             destination.mkdir(parents=True)
             for name in sorted(required):
@@ -439,7 +514,10 @@ def load_wave_training(BUNDLE, settings=None):
                     checks[label + ":shape"] = arrays[label].shape == (len(value), 1)
                     error = float(
                         np.max(
-                            np.abs(exact_numpy(value.astype(np.float64), config) - arrays[label])
+                            np.abs(
+                                exact_numpy(value.astype(np.float64), config)
+                                - arrays[label]
+                            )
                         )
                     )
                     details[label + ":max_label_error"] = error
@@ -460,12 +538,16 @@ def load_wave_training(BUNDLE, settings=None):
             sets = []
             for split in ("train", "val", "test"):
                 a = arrays[f"X_{family}_{split}"]
-                checks[f"{family}_{split}:count"] = len(a) == config["data"][f"{family}_{split}"]
+                checks[f"{family}_{split}:count"] = (
+                    len(a) == config["data"][f"{family}_{split}"]
+                )
                 sets.append({tuple(row) for row in a.tolist()})
             counts = [len(sets[i] & sets[j]) for i, j in ((0, 1), (0, 2), (1, 2))]
             details[family + ":split_overlap_counts"] = counts
             checks[family + ":split_disjoint"] = not any(counts)
-        checks["full_grid_count"] = len(arrays["X_exact"]) == config["data"]["full_grid_total"]
+        checks["full_grid_count"] = (
+            len(arrays["X_exact"]) == config["data"]["full_grid_total"]
+        )
         return {"checks": checks, "details": details, "passed": all(checks.values())}
 
     def snapshot(run_dir, backup_dir, status):
@@ -480,7 +562,12 @@ def load_wave_training(BUNDLE, settings=None):
                 if path.is_symlink():
                     raise ValueError("Diagnostic output symlinks are not supported")
                 if path.is_file() and (
-                    not any((part.endswith(".tmp") for part in path.relative_to(run_dir).parts))
+                    not any(
+                        (
+                            part.endswith(".tmp")
+                            for part in path.relative_to(run_dir).parts
+                        )
+                    )
                 ):
                     archive.write(path, path.relative_to(run_dir).as_posix())
         with zipfile.ZipFile(temporary) as archive:
@@ -509,7 +596,9 @@ def load_wave_training(BUNDLE, settings=None):
         }
 
     def field_metrics(model, arrays):
-        prediction = model(tf.constant(arrays["X_exact"], tf.float32), training=False).numpy()
+        prediction = model(
+            tf.constant(arrays["X_exact"], tf.float32), training=False
+        ).numpy()
         exact = arrays["u_exact"].astype(np.float64)
         delta = prediction.astype(np.float64) - exact
         return {
@@ -538,7 +627,9 @@ def load_wave_training(BUNDLE, settings=None):
 
     def new_model(config, method, seed, path):
         tf.keras.utils.set_random_seed(seed)
-        model = WavePINN2DComparison(config, use_fourier="fourier" in method, fourier_seed=seed)
+        model = WavePINN2DComparison(
+            config, use_fourier="fourier" in method, fourier_seed=seed
+        )
         model(tf.zeros((1, 3), tf.float32))
         model.load_weights(path)
         return model
@@ -559,7 +650,9 @@ def load_wave_training(BUNDLE, settings=None):
 
     def gradient_record(model, tensors, fixed_lambda=False):
         variables = [
-            v for v in model.trainable_variables if not (fixed_lambda and v is model.lambda_1)
+            v
+            for v in model.trainable_variables
+            if not (fixed_lambda and v is model.lambda_1)
         ]
         with tf.GradientTape(persistent=True) as tape:
             losses = calculate_losses_2d(model, tensors, training=True)
@@ -602,7 +695,12 @@ def load_wave_training(BUNDLE, settings=None):
             "exact_BC_IC_labels": all(
                 (
                     losses[k] < 1e-08
-                    for k in ("initial_displacement", "initial_velocity", "boundary", "supervised")
+                    for k in (
+                        "initial_displacement",
+                        "initial_velocity",
+                        "boundary",
+                        "supervised",
+                    )
                 )
             ),
         }
@@ -637,7 +735,9 @@ def load_wave_training(BUNDLE, settings=None):
             )
             .astype(np.float32)
         )
-        np.savez_compressed(Path(run_dir) / "independent_residual_points.npz", points=random_points)
+        np.savez_compressed(
+            Path(run_dir) / "independent_residual_points.npz", points=random_points
+        )
         for row in payload["results"]:
             print(f"Auditing {row['method']} seed={row['seed']}", flush=True)
             method = row["method"]
@@ -671,7 +771,9 @@ def load_wave_training(BUNDLE, settings=None):
                     )
                 ),
                 "best_final_prediction": bool(
-                    np.allclose(model(x).numpy(), reloaded(x).numpy(), rtol=1e-05, atol=1e-06)
+                    np.allclose(
+                        model(x).numpy(), reloaded(x).numpy(), rtol=1e-05, atol=1e-06
+                    )
                 ),
                 "best_final_residual": bool(
                     np.allclose(
@@ -692,14 +794,20 @@ def load_wave_training(BUNDLE, settings=None):
             }
             fourier = None
             if model.fourier_matrix is not None:
-                fourier = hashlib.sha256(model.fourier_matrix.numpy().tobytes()).hexdigest()
+                fourier = hashlib.sha256(
+                    model.fourier_matrix.numpy().tobytes()
+                ).hexdigest()
                 checks["fourier_seed_reconstruction"] = bool(
-                    np.array_equal(model.fourier_matrix.numpy(), reloaded.fourier_matrix.numpy())
+                    np.array_equal(
+                        model.fourier_matrix.numpy(), reloaded.fourier_matrix.numpy()
+                    )
                 )
             history_path = Path(source_dir) / row["weights"]["history"]
             with history_path.open(encoding="utf-8") as stream:
                 history = list(csv.DictReader(stream))
-            selected = min(history, key=lambda r: float(r["target_score_max_relative_l1_l2"]))
+            selected = min(
+                history, key=lambda r: float(r["target_score_max_relative_l1_l2"])
+            )
             checks["selected_checkpoint_history"] = bool(
                 np.isclose(
                     max(metrics["relative_l1"], metrics["relative_l2"]),
@@ -727,11 +835,16 @@ def load_wave_training(BUNDLE, settings=None):
                 model.lambda_1.assign(learned)
             checks["stored_target_physics"] = bool(
                 np.isclose(
-                    target_test, row["test_physics_loss_target_lambda"], rtol=0.002, atol=2e-05
+                    target_test,
+                    row["test_physics_loss_target_lambda"],
+                    rtol=0.002,
+                    atol=2e-05,
                 )
             )
             checks["lambda_restored"] = float(model.lambda_1.numpy()) == learned
-            last = new_model(config, method, row["seed"], Path(source_dir) / row["weights"]["last"])
+            last = new_model(
+                config, method, row["seed"], Path(source_dir) / row["weights"]["last"]
+            )
             last_metrics = field_metrics(last, arrays)
             checks["last_checkpoint_history"] = bool(
                 np.isclose(
@@ -783,7 +896,9 @@ def load_wave_training(BUNDLE, settings=None):
         write_json(Path(run_dir) / "audit.json", report)
         return report
 
-    def import_forward_extension(bundle, run_dir, contract, config, initialization_sha256):
+    def import_forward_extension(
+        bundle, run_dir, contract, config, initialization_sha256
+    ):
         """Fork the reviewed 10k forward checkpoint; do not mutate the parent run."""
         destination = Path(run_dir) / "forward_fixed"
         if destination.exists():
@@ -802,7 +917,13 @@ def load_wave_training(BUNDLE, settings=None):
             if archive.testzip() is not None:
                 raise ValueError("Diagnostic ZIP CRC failed")
             parent = json.loads(archive.read("contract.json"))
-            for key in ("source_bundle_sha256", "definition_sha256", "tensorflow", "numpy", "seed"):
+            for key in (
+                "source_bundle_sha256",
+                "definition_sha256",
+                "tensorflow",
+                "numpy",
+                "seed",
+            ):
                 if parent.get(key) != contract.get(key):
                     raise ValueError(f"Extension parent mismatch: {key}")
             if parent.get("runtime_module_sha256") != SUPPORTED_EXTENSION_RUNTIME:
@@ -817,11 +938,18 @@ def load_wave_training(BUNDLE, settings=None):
                 parent.get("mode") not in {"pair", "forward"}
                 or parent.get("maximum_iterations") != 10000
             ):
-                raise ValueError("Expected the original 10,000-iteration diagnostic parent")
-            if contract["mode"] != "extend" or not 10000 < contract["maximum_iterations"] <= 30000:
+                raise ValueError(
+                    "Expected the original 10,000-iteration diagnostic parent"
+                )
+            if (
+                contract["mode"] != "extend"
+                or not 10000 < contract["maximum_iterations"] <= 30000
+            ):
                 raise ValueError("Extension total budget must be within 10001..30000")
             if json.loads(archive.read("source_config.json")) != config:
-                raise ValueError("Parent PDE/data/model/training configuration mismatch")
+                raise ValueError(
+                    "Parent PDE/data/model/training configuration mismatch"
+                )
             summary = json.loads(archive.read("summary.json"))
             if (
                 summary.get("status") != "complete"
@@ -851,7 +979,10 @@ def load_wave_training(BUNDLE, settings=None):
             ] != list(range(0, 10001, 1000)):
                 raise ValueError("Parent target/history contract mismatch")
             if any(
-                (r["lambda_1"] != config["equation"]["lambda_target"] for r in state["history"])
+                (
+                    r["lambda_1"] != config["equation"]["lambda_target"]
+                    for r in state["history"]
+                )
             ):
                 raise ValueError("Parent coefficient was not fixed")
             best_version = state["best_checkpoint"]
@@ -875,7 +1006,8 @@ def load_wave_training(BUNDLE, settings=None):
                 "maximum_total_iterations": contract["maximum_iterations"],
                 "parent_forward_result": result,
                 "copied_files": {
-                    n: hashlib.sha256(archive.read(n)).hexdigest() for n in sorted(required)
+                    n: hashlib.sha256(archive.read(n)).hexdigest()
+                    for n in sorted(required)
                 },
             }
             staging = Path(run_dir) / ("forward_import_" + uuid.uuid4().hex + ".tmp")
@@ -892,7 +1024,9 @@ def load_wave_training(BUNDLE, settings=None):
         "158989e0e9af93bbf707f67223529a0b515bb746461dfedad2688845f75877d9"
     )
 
-    def import_warmup_extension(bundle, run_dir, contract, config, initialization_sha256):
+    def import_warmup_extension(
+        bundle, run_dir, contract, config, initialization_sha256
+    ):
         """Copy a reviewed latest inverse checkpoint to a new run; never import control training."""
         case = "data_warmup_inverse"
         destination = Path(run_dir) / case
@@ -902,7 +1036,9 @@ def load_wave_training(BUNDLE, settings=None):
             contract["mode"] != "warmup_extend"
             or not 10000 < contract["maximum_iterations"] <= 30000
         ):
-            raise ValueError("Warmup extension total budget must be within 10001..30000")
+            raise ValueError(
+                "Warmup extension total budget must be within 10001..30000"
+            )
         with zipfile.ZipFile(bundle) as archive:
             names = archive.namelist()
             if (
@@ -917,10 +1053,19 @@ def load_wave_training(BUNDLE, settings=None):
             if archive.testzip() is not None:
                 raise ValueError("Warmup parent ZIP CRC failed")
             parent = json.loads(archive.read("contract.json"))
-            for key in ("source_bundle_sha256", "definition_sha256", "tensorflow", "numpy", "seed"):
+            for key in (
+                "source_bundle_sha256",
+                "definition_sha256",
+                "tensorflow",
+                "numpy",
+                "seed",
+            ):
                 if parent.get(key) != contract.get(key):
                     raise ValueError("Warmup extension parent mismatch: " + key)
-            if parent.get("runtime_module_sha256") != SUPPORTED_WARMUP_EXTENSION_RUNTIME:
+            if (
+                parent.get("runtime_module_sha256")
+                != SUPPORTED_WARMUP_EXTENSION_RUNTIME
+            ):
                 raise ValueError("Unreviewed warmup checkpoint producer")
             for filename, key in (
                 ("diagnostic_runtime.py", "runtime_module_sha256"),
@@ -928,7 +1073,10 @@ def load_wave_training(BUNDLE, settings=None):
             ):
                 if hashlib.sha256(archive.read(filename)).hexdigest() != parent[key]:
                     raise ValueError("Warmup parent embedded code checksum mismatch")
-            if parent.get("mode") != "warmup_pair" or parent.get("maximum_iterations") != 10000:
+            if (
+                parent.get("mode") != "warmup_pair"
+                or parent.get("maximum_iterations") != 10000
+            ):
                 raise ValueError("Expected a completed 10k warmup_pair parent")
             if json.loads(archive.read("source_config.json")) != config:
                 raise ValueError("Warmup parent source configuration mismatch")
@@ -939,7 +1087,9 @@ def load_wave_training(BUNDLE, settings=None):
                 and (summary.get("training_executed") is True)
             ):
                 raise ValueError("Warmup parent is incomplete")
-            results = {k: json.loads(archive.read(k + "/result.json")) for k in WARMUP_CASES}
+            results = {
+                k: json.loads(archive.read(k + "/result.json")) for k in WARMUP_CASES
+            }
             if compare_warmup_results(results) != json.loads(
                 archive.read("warmup_comparison.json")
             ):
@@ -952,7 +1102,9 @@ def load_wave_training(BUNDLE, settings=None):
                 raise ValueError("Warmup inverse identity mismatch")
             expected = result["experiment_contract"]
             if json.loads(archive.read(case + "/experiment_contract.json")) != expected:
-                raise ValueError("Warmup parent case contract differs from checkpoint result")
+                raise ValueError(
+                    "Warmup parent case contract differs from checkpoint result"
+                )
             if (
                 expected["configuration"] != lr_case_config(config, "inverse_lr_thesis")
                 or expected["maximum_iterations"] != 10000
@@ -977,12 +1129,21 @@ def load_wave_training(BUNDLE, settings=None):
             if (
                 state["history"][-1]["phase"] != "joint"
                 or state["history"][-1]["optimizer_iterations"] != 10000
-                or (not all((all(row["checks"].values()) for row in state["gradient_trace"])))
+                or (
+                    not all(
+                        (all(row["checks"].values()) for row in state["gradient_trace"])
+                    )
+                )
             ):
-                raise ValueError("Warmup parent phase/optimizer/gradient evidence failed")
+                raise ValueError(
+                    "Warmup parent phase/optimizer/gradient evidence failed"
+                )
             best = state["best_checkpoint"]
             safe_relative(best)
-            required = {case + "/latest.json", case + "/independent_residual_points.npz"}
+            required = {
+                case + "/latest.json",
+                case + "/independent_residual_points.npz",
+            }
             for directory in {version, best}:
                 for filename in (
                     "state.index",
@@ -1005,10 +1166,13 @@ def load_wave_training(BUNDLE, settings=None):
                 "maximum_total_iterations": contract["maximum_iterations"],
                 "latest_directory": version,
                 "copied_files": {
-                    n: hashlib.sha256(archive.read(n)).hexdigest() for n in sorted(required)
+                    n: hashlib.sha256(archive.read(n)).hexdigest()
+                    for n in sorted(required)
                 },
             }
-            new_contract = dict(expected, maximum_iterations=contract["maximum_iterations"])
+            new_contract = dict(
+                expected, maximum_iterations=contract["maximum_iterations"]
+            )
             staging = Path(run_dir) / ("warmup_import_" + uuid.uuid4().hex + ".tmp")
             staging.mkdir(parents=True)
             for name in required:
@@ -1027,7 +1191,8 @@ def load_wave_training(BUNDLE, settings=None):
         parent = evidence["parent_experiment_contract"]
         if (
             state.get("experiment_contract") != parent
-            or dict(parent, maximum_iterations=expected["maximum_iterations"]) != expected
+            or dict(parent, maximum_iterations=expected["maximum_iterations"])
+            != expected
             or state["iteration"] != evidence["continued_from_iteration"]
         ):
             raise RuntimeError("Warmup extension checkpoint contract mismatch")
@@ -1044,7 +1209,11 @@ def load_wave_training(BUNDLE, settings=None):
             - evidence["continued_from_iteration"],
             "parent_last": evidence["parent_result"]["state"]["history"][-1],
             "best_all_phases": next(
-                (r for r in history if r["iteration"] == result["state"]["best_iteration"])
+                (
+                    r
+                    for r in history
+                    if r["iteration"] == result["state"]["best_iteration"]
+                )
             ),
             "best_joint_by_field_error": min(
                 (r for r in history if r["phase"] == "joint"),
@@ -1087,7 +1256,9 @@ def load_wave_training(BUNDLE, settings=None):
 
     def warmup_objective(losses, weights):
         """Original normalized weights, with only the physics contribution omitted."""
-        return sum((losses[k] * weights[k] for k in ("initial", "boundary", "supervised")))
+        return sum(
+            (losses[k] * weights[k] for k in ("initial", "boundary", "supervised"))
+        )
 
     def warmup_observation_due(iteration, maximum_iterations, interval):
         return (
@@ -1129,7 +1300,9 @@ def load_wave_training(BUNDLE, settings=None):
                 if row["phase"] != warmup_phase(case, row["iteration"]) or (
                     row["phase"] in {"warmup", "initial"} and row["lambda_1"] != 0.5
                 ):
-                    raise ValueError("Warmup phase or frozen coefficient invariant failed")
+                    raise ValueError(
+                        "Warmup phase or frozen coefficient invariant failed"
+                    )
             for update in state["update_trace"]:
                 if update["phase"] != warmup_phase(case, update["iteration"]):
                     raise ValueError("Warmup update phase mismatch")
@@ -1146,11 +1319,14 @@ def load_wave_training(BUNDLE, settings=None):
                 ):
                     raise ValueError("Warmup coefficient was updated before release")
         histories = [
-            {row["iteration"]: row for row in r["state"]["history"]} for r in (control, treatment)
+            {row["iteration"]: row for row in r["state"]["history"]}
+            for r in (control, treatment)
         ]
         if not all((0 in h for h in histories)) or not all(
             (
-                np.isclose(histories[0][0][k], histories[1][0][k], rtol=0.0002, atol=2e-06)
+                np.isclose(
+                    histories[0][0][k], histories[1][0][k], rtol=0.0002, atol=2e-06
+                )
                 for k in ("relative_l1", "relative_l2", "lambda_1")
             )
         ):
@@ -1186,7 +1362,9 @@ def load_wave_training(BUNDLE, settings=None):
                 case: {
                     "initial_learning_rate": 0.0005,
                     "warmup_iterations": WARMUP_CASES[case],
-                    "joint_updates_completed": max(0, r["state"]["iteration"] - WARMUP_CASES[case]),
+                    "joint_updates_completed": max(
+                        0, r["state"]["iteration"] - WARMUP_CASES[case]
+                    ),
                     "best_iteration": r["state"]["best_iteration"],
                     "best_metrics": r["best_metrics"],
                     "best": next(
@@ -1209,7 +1387,9 @@ def load_wave_training(BUNDLE, settings=None):
         if case not in LR_CASES:
             raise ValueError("Unknown learning-rate case")
         if source["training"]["learning_rate"] != 0.001:
-            raise ValueError("Learning-rate control requires source learning_rate=0.001")
+            raise ValueError(
+                "Learning-rate control requires source learning_rate=0.001"
+            )
         if source["equation"]["lambda_initial"] != 0.5:
             raise ValueError("Learning-rate comparison requires initial lambda=0.5")
         result = copy.deepcopy(source)
@@ -1231,7 +1411,9 @@ def load_wave_training(BUNDLE, settings=None):
             if json.loads(path.read_text(encoding="utf-8")) != expected:
                 raise RuntimeError("Learning-rate experiment contract mismatch")
         elif (Path(case_dir) / "latest.json").exists():
-            raise RuntimeError("Learning-rate checkpoint is missing its experiment contract")
+            raise RuntimeError(
+                "Learning-rate checkpoint is missing its experiment contract"
+            )
         else:
             write_json(path, expected)
 
@@ -1257,11 +1439,14 @@ def load_wave_training(BUNDLE, settings=None):
                 )
             )
         ):
-            raise ValueError("Learning-rate comparison has changes beyond initial learning rate")
+            raise ValueError(
+                "Learning-rate comparison has changes beyond initial learning rate"
+            )
         if not all((r["state"]["complete"] for r in results.values())):
             raise ValueError("Learning-rate comparison requires completed cases")
         histories = [
-            {r["iteration"]: r for r in result["state"]["history"]} for result in (control, thesis)
+            {r["iteration"]: r for r in result["state"]["history"]}
+            for result in (control, thesis)
         ]
         if (
             0 not in histories[0]
@@ -1269,7 +1454,12 @@ def load_wave_training(BUNDLE, settings=None):
             or (
                 not all(
                     (
-                        np.isclose(histories[0][0][k], histories[1][0][k], rtol=0.0002, atol=2e-06)
+                        np.isclose(
+                            histories[0][0][k],
+                            histories[1][0][k],
+                            rtol=0.0002,
+                            atol=2e-06,
+                        )
                         for k in ("relative_l1", "relative_l2", "lambda_1")
                     )
                 )
@@ -1338,21 +1528,27 @@ def load_wave_training(BUNDLE, settings=None):
             grad = tape.gradient(loss, network)
             vector = np.concatenate(
                 [
-                    (np.zeros(v.shape, dtype=np.float32) if g is None else g.numpy()).ravel()
+                    (
+                        np.zeros(v.shape, dtype=np.float32) if g is None else g.numpy()
+                    ).ravel()
                     for v, g in zip(network, grad)
                 ]
             ).astype(np.float64)
             coefficient = tape.gradient(loss, model.lambda_1)
             gradients[name] = {
                 "network_norm": float(np.linalg.norm(vector)),
-                "lambda_gradient": 0.0 if coefficient is None else float(coefficient.numpy()),
+                "lambda_gradient": (
+                    0.0 if coefficient is None else float(coefficient.numpy())
+                ),
                 "lambda_connected": coefficient is not None,
             }
             vectors[name] = vector
         del tape
         cosine = {}
         for name in ("initial", "boundary", "supervised"):
-            denominator = np.linalg.norm(vectors["physics"]) * np.linalg.norm(vectors[name])
+            denominator = np.linalg.norm(vectors["physics"]) * np.linalg.norm(
+                vectors[name]
+            )
             cosine["physics_vs_" + name] = (
                 None
                 if denominator == 0
@@ -1382,9 +1578,13 @@ def load_wave_training(BUNDLE, settings=None):
         del second
         coefficient = float(model.lambda_1.numpy())
         residual = a - coefficient * b
-        expected_gradient = float(-2 * np.mean(b * residual) * wave2d_weights["physics"])
+        expected_gradient = float(
+            -2 * np.mean(b * residual) * wave2d_weights["physics"]
+        )
         sensitivity = float(np.mean(b * b))
-        fixed_field_optimum = None if sensitivity <= 1e-12 else float(np.mean(a * b) / sensitivity)
+        fixed_field_optimum = (
+            None if sensitivity <= 1e-12 else float(np.mean(a * b) / sensitivity)
+        )
         checks = {
             "lambda_only_physics_dependency": all(
                 (
@@ -1408,7 +1608,9 @@ def load_wave_training(BUNDLE, settings=None):
                     atol=2e-05,
                 )
             ),
-            "finite_network_gradients": bool(all((np.isfinite(v).all() for v in vectors.values()))),
+            "finite_network_gradients": bool(
+                all((np.isfinite(v).all() for v in vectors.values()))
+            ),
         }
         return {
             "gradients": gradients,
@@ -1429,7 +1631,9 @@ def load_wave_training(BUNDLE, settings=None):
             if old is None:
                 continue
             checks = {
-                key: bool(np.isclose(row[key], float(old[stored]), rtol=0.0002, atol=2e-06))
+                key: bool(
+                    np.isclose(row[key], float(old[stored]), rtol=0.0002, atol=2e-06)
+                )
                 for key, stored in (
                     ("relative_l1", "full_grid_relative_l1"),
                     ("relative_l2", "full_grid_relative_l2"),
@@ -1462,9 +1666,9 @@ def load_wave_training(BUNDLE, settings=None):
         allow_extension=False,
     ):
         """Baseline-only controlled experiment; no benchmark or service promotion."""
-        if case not in {"forward_fixed", "inverse_control", "inverse_trace"} | set(LR_CASES) | set(
-            WARMUP_CASES
-        ):
+        if case not in {"forward_fixed", "inverse_control", "inverse_trace"} | set(
+            LR_CASES
+        ) | set(WARMUP_CASES):
             raise ValueError(case)
         warmup_comparison = case in WARMUP_CASES
         lr_comparison = case in LR_CASES or warmup_comparison
@@ -1492,7 +1696,9 @@ def load_wave_training(BUNDLE, settings=None):
         case_dir.mkdir(exist_ok=True)
         experiment_contract = None
         if lr_comparison:
-            config = lr_case_config(config, "inverse_lr_thesis" if warmup_comparison else case)
+            config = lr_case_config(
+                config, "inverse_lr_thesis" if warmup_comparison else case
+            )
             experiment_contract = {
                 "case": case,
                 "configuration": config,
@@ -1522,17 +1728,24 @@ def load_wave_training(BUNDLE, settings=None):
             )
         if fixed:
             model.lambda_1.assign(config["equation"]["lambda_target"])
-        variables = [v for v in model.trainable_variables if not (fixed and v is model.lambda_1)]
+        variables = [
+            v for v in model.trainable_variables if not (fixed and v is model.lambda_1)
+        ]
         network_variables = [v for v in variables if v is not model.lambda_1]
         cfg = config["training"]
         optimizer = tf.keras.optimizers.Adam(
             tf.keras.optimizers.schedules.ExponentialDecay(
-                cfg["learning_rate"], cfg["decay_steps"], cfg["decay_rate"], staircase=True
+                cfg["learning_rate"],
+                cfg["decay_steps"],
+                cfg["decay_rate"],
+                staircase=True,
             )
         )
         optimizer.build(variables)
         if lr_comparison and int(optimizer.iterations.numpy()) != 0:
-            raise RuntimeError("New learning-rate case requires a fresh optimizer before restore")
+            raise RuntimeError(
+                "New learning-rate case requires a fresh optimizer before restore"
+            )
         checkpoint = tf.train.Checkpoint(model=model, optimizer=optimizer)
         tensors = arrays_to_tensors(arrays)
         if lr_comparison:
@@ -1546,7 +1759,9 @@ def load_wave_training(BUNDLE, settings=None):
             if points_path.exists():
                 with np.load(points_path, allow_pickle=False) as stored:
                     if not np.array_equal(stored["coordinates"], residual_points):
-                        raise RuntimeError("Independent residual points changed on resume")
+                        raise RuntimeError(
+                            "Independent residual points changed on resume"
+                        )
             else:
                 np.savez(points_path, coordinates=residual_points)
         state = {
@@ -1572,15 +1787,23 @@ def load_wave_training(BUNDLE, settings=None):
                     (Path(run_dir) / "warmup_extension_provenance.json").read_text()
                 )
                 validate_warmup_extension_state(
-                    state, experiment_contract, provenance, case_dir / version / "state.json"
+                    state,
+                    experiment_contract,
+                    provenance,
+                    case_dir / version / "state.json",
                 )
-            elif lr_comparison and state.get("experiment_contract") != experiment_contract:
+            elif (
+                lr_comparison
+                and state.get("experiment_contract") != experiment_contract
+            ):
                 raise RuntimeError(
                     "Restored learning-rate checkpoint belongs to a different experiment"
                 )
             checkpoint.read(str(case_dir / version / "state")).assert_consumed()
             if int(optimizer.iterations.numpy()) != state["iteration"]:
-                raise RuntimeError("Restored optimizer iteration does not match checkpoint history")
+                raise RuntimeError(
+                    "Restored optimizer iteration does not match checkpoint history"
+                )
             if fixed and float(model.lambda_1.numpy()) != float(
                 config["equation"]["lambda_target"]
             ):
@@ -1607,7 +1830,9 @@ def load_wave_training(BUNDLE, settings=None):
                 if not np.isclose(
                     restored[key], state["history"][-1][key], rtol=0.0002, atol=2e-06
                 ):
-                    raise RuntimeError("Restored checkpoint metrics do not match its history")
+                    raise RuntimeError(
+                        "Restored checkpoint metrics do not match its history"
+                    )
             write_json(
                 case_dir / "reload_verification.json",
                 {
@@ -1627,7 +1852,8 @@ def load_wave_training(BUNDLE, settings=None):
             ):
                 raise RuntimeError("Cannot resume beyond a failed gradient diagnostic")
             print(
-                f"Restored {case}: iteration {state['iteration']} including optimizer", flush=True
+                f"Restored {case}: iteration {state['iteration']} including optimizer",
+                flush=True,
             )
             if warmup_extension:
                 print(
@@ -1647,12 +1873,16 @@ def load_wave_training(BUNDLE, settings=None):
         @tf.function(autograph=False)
         def step():
             with tf.GradientTape() as tape:
-                total = calculate_losses_2d(model, tensors["train"], training=True)["total"]
+                total = calculate_losses_2d(model, tensors["train"], training=True)[
+                    "total"
+                ]
             gradients = tape.gradient(total, variables)
             for gradient in gradients:
                 if gradient is None:
                     raise RuntimeError("Disconnected diagnostic training gradient")
-                tf.debugging.assert_all_finite(gradient, "Nonfinite diagnostic gradient")
+                tf.debugging.assert_all_finite(
+                    gradient, "Nonfinite diagnostic gradient"
+                )
             if trace:
                 lambda_gradient = next(
                     (g for g, v in zip(gradients, variables) if v is model.lambda_1)
@@ -1673,7 +1903,9 @@ def load_wave_training(BUNDLE, settings=None):
                 tf.debugging.assert_all_finite(gradient, "Nonfinite warmup gradient")
             optimizer.apply_gradients(zip(gradients, network_variables))
             tf.debugging.assert_equal(
-                model.lambda_1, tf.cast(0.5, model.lambda_1.dtype), "Warmup coefficient changed"
+                model.lambda_1,
+                tf.cast(0.5, model.lambda_1.dtype),
+                "Warmup coefficient changed",
             )
             return (objective, tf.constant(0.0, tf.float32))
 
@@ -1697,12 +1929,16 @@ def load_wave_training(BUNDLE, settings=None):
             }
             if lr_comparison:
                 stats = residual_statistics(model, residual_points)
-                record_row.update({"independent_residual_" + k: v for k, v in stats.items()})
+                record_row.update(
+                    {"independent_residual_" + k: v for k, v in stats.items()}
+                )
                 record_row["lambda_absolute_error"] = abs(
                     record_row["lambda_1"] - config["equation"]["lambda_target"]
                 )
             for split, data in tensors.items():
-                record_row.update({split + "_" + k: v for k, v in loss_record(model, data).items()})
+                record_row.update(
+                    {split + "_" + k: v for k, v in loss_record(model, data).items()}
+                )
             if warmup_comparison:
                 phase = warmup_phase(case, iteration)
                 if phase in {"warmup", "initial"} and record_row["lambda_1"] != 0.5:
@@ -1712,7 +1948,8 @@ def load_wave_training(BUNDLE, settings=None):
                     optimizer_iterations=int(optimizer.iterations.numpy()),
                     active_train_objective=(
                         warmup_objective(
-                            {k: record_row["train_" + k] for k in wave2d_weights}, wave2d_weights
+                            {k: record_row["train_" + k] for k in wave2d_weights},
+                            wave2d_weights,
                         )
                         if phase == "warmup"
                         else record_row["train_total"]
@@ -1722,9 +1959,13 @@ def load_wave_training(BUNDLE, settings=None):
                 detail = coefficient_trace(model, tensors["train"])
                 state["gradient_trace"].append({"iteration": iteration, **detail})
             state["history"].append(record_row)
-            state.update(iteration=iteration, elapsed_seconds=record_row["elapsed_seconds"])
+            state.update(
+                iteration=iteration, elapsed_seconds=record_row["elapsed_seconds"]
+            )
             if state["best_score"] is None or score < state["best_score"]:
-                state.update(best_score=score, best_iteration=iteration, best_checkpoint=version)
+                state.update(
+                    best_score=score, best_iteration=iteration, best_checkpoint=version
+                )
             threshold = config["method_comparison"]["stop_rule"]["threshold"]
             target_observation = (
                 not trace
@@ -1732,13 +1973,17 @@ def load_wave_training(BUNDLE, settings=None):
                 or iteration == maximum_iterations
             )
             if warmup_comparison:
-                target_observation = target_observation and warmup_target_allowed(case, iteration)
+                target_observation = target_observation and warmup_target_allowed(
+                    case, iteration
+                )
             state["target_reached"] = (
                 target_observation
                 and metrics["relative_l1"] < threshold
                 and (metrics["relative_l2"] < threshold)
             )
-            state["complete"] = state["target_reached"] or iteration >= maximum_iterations
+            state["complete"] = (
+                state["target_reached"] or iteration >= maximum_iterations
+            )
             state["stop_reason"] = (
                 "target_reached"
                 if state["target_reached"]
@@ -1747,7 +1992,9 @@ def load_wave_training(BUNDLE, settings=None):
             checkpoint.write(str(staging / "state"))
             model.save_weights(staging / "model.weights.h5")
             write_json(staging / "state.json", state)
-            with (staging / "history.csv").open("w", newline="", encoding="utf-8") as stream:
+            with (staging / "history.csv").open(
+                "w", newline="", encoding="utf-8"
+            ) as stream:
                 writer = csv.DictWriter(stream, fieldnames=list(state["history"][0]))
                 writer.writeheader()
                 writer.writerows(state["history"])
@@ -1757,7 +2004,9 @@ def load_wave_training(BUNDLE, settings=None):
                     with (staging / "lambda_updates.csv").open(
                         "w", newline="", encoding="utf-8"
                     ) as stream:
-                        writer = csv.DictWriter(stream, fieldnames=list(state["update_trace"][0]))
+                        writer = csv.DictWriter(
+                            stream, fieldnames=list(state["update_trace"][0])
+                        )
                         writer.writeheader()
                         writer.writerows(state["update_trace"])
             staging.rename(case_dir / version)
@@ -1788,24 +2037,34 @@ def load_wave_training(BUNDLE, settings=None):
             for iteration in range(state["iteration"] + 1, maximum_iterations + 1):
                 if trace:
                     before = float(model.lambda_1.numpy())
-                    learning_rate = float(tf.convert_to_tensor(optimizer.learning_rate).numpy())
-                    warming = warmup_comparison and warmup_phase(case, iteration) == "warmup"
+                    learning_rate = float(
+                        tf.convert_to_tensor(optimizer.learning_rate).numpy()
+                    )
+                    warming = (
+                        warmup_comparison and warmup_phase(case, iteration) == "warmup"
+                    )
                     pre_objective, pre_gradient = warmup_step() if warming else step()
                     after = float(model.lambda_1.numpy())
-                    if not lr_comparison or iteration <= (3000 if warmup_comparison else 1000):
+                    if not lr_comparison or iteration <= (
+                        3000 if warmup_comparison else 1000
+                    ):
                         state["update_trace"].append(
                             {
                                 "iteration": iteration,
                                 "lambda_before": before,
                                 "lambda_after": after,
                                 "lambda_delta": after - before,
-                                "total_lambda_gradient_pre_update": float(pre_gradient.numpy()),
+                                "total_lambda_gradient_pre_update": float(
+                                    pre_gradient.numpy()
+                                ),
                                 "total_loss_pre_update": float(pre_objective.numpy()),
                                 "learning_rate": learning_rate,
                             }
                         )
                         if warmup_comparison:
-                            state["update_trace"][-1]["phase"] = warmup_phase(case, iteration)
+                            state["update_trace"][-1]["phase"] = warmup_phase(
+                                case, iteration
+                            )
                 else:
                     step()
                 due = (
@@ -1818,7 +2077,9 @@ def load_wave_training(BUNDLE, settings=None):
                     else (
                         trace_due(iteration, maximum_iterations)
                         if trace
-                        else iteration % config["method_comparison"]["evaluation_interval"] == 0
+                        else iteration
+                        % config["method_comparison"]["evaluation_interval"]
+                        == 0
                         or iteration == maximum_iterations
                     )
                 )
@@ -1875,8 +2136,16 @@ def load_wave_training(BUNDLE, settings=None):
                 "t": [0.0, 0.1, 0.9, 1.0],
             },
             "density_multipliers": {
-                "supervised": {"initial_time": 2.0, "spatial_boundary": 2.0, "late_boundary": 2.0},
-                "collocation": {"initial_time": 3.0, "spatial_boundary": 2.0, "late_boundary": 1.0},
+                "supervised": {
+                    "initial_time": 2.0,
+                    "spatial_boundary": 2.0,
+                    "late_boundary": 2.0,
+                },
+                "collocation": {
+                    "initial_time": 3.0,
+                    "spatial_boundary": 2.0,
+                    "late_boundary": 1.0,
+                },
             },
             "sector_density_overrides": {"supervised": {}, "collocation": {}},
             "sampling_seeds": SAMPLING_SEEDS.copy(),
@@ -1948,25 +2217,36 @@ def load_wave_training(BUNDLE, settings=None):
                     or (not np.isfinite(value))
                     or (not 0 < value <= 1000000.0)
                 ):
-                    raise ValueError("Density multipliers must be finite positive numbers <= 1e6")
+                    raise ValueError(
+                        "Density multipliers must be finite positive numbers <= 1e6"
+                    )
             masses = {}
             for i, j, k in indices:
                 key = f"x{i}_y{j}_t{k}"
-                boundary = i in (0, len(edges["x"]) - 2) or j in (0, len(edges["y"]) - 2)
+                boundary = i in (0, len(edges["x"]) - 2) or j in (
+                    0,
+                    len(edges["y"]) - 2,
+                )
                 density = factors["initial_time"] if k == 0 else 1.0
                 if boundary:
                     density *= factors["spatial_boundary"]
                     if k == len(edges["t"]) - 2:
                         density *= factors["late_boundary"]
                 density = overrides.get(key, density)
-                volume = np.prod([edges[a][q + 1] - edges[a][q] for a, q in zip("xyt", (i, j, k))])
+                volume = np.prod(
+                    [edges[a][q + 1] - edges[a][q] for a, q in zip("xyt", (i, j, k))]
+                )
                 masses[key] = float(volume * density)
             protocol[family + "_ratios"] = masses
         sector_boxes(protocol, config)
         return json.loads(json.dumps(protocol))
 
     def default_sector_protocol():
-        unit = {"domain": {a + s: v for a in "xyt" for s, v in (("_min", 0.0), ("_max", 1.0))}}
+        unit = {
+            "domain": {
+                a + s: v for a in "xyt" for s, v in (("_min", 0.0), ("_max", 1.0))
+            }
+        }
         return resolve_sector_design(default_sector_design(), unit)
 
     def sector_boxes(protocol, config):
@@ -2026,7 +2306,9 @@ def load_wave_training(BUNDLE, settings=None):
                 raise ValueError("Every sector ratio must be positive and finite")
         seeds = protocol["sampling_seeds"]
         if not isinstance(seeds, list) or seeds != SAMPLING_SEEDS:
-            raise ValueError("This protocol fixes four sampling replications: 3234..3237")
+            raise ValueError(
+                "This protocol fixes four sampling replications: 3234..3237"
+            )
         if protocol["cases"] != list(SECTOR_CASES):
             raise ValueError("The matched four-arm comparison is required")
         return boxes
@@ -2051,13 +2333,21 @@ def load_wave_training(BUNDLE, settings=None):
         NumPy implementation: independent permutations plus uniform jitter.
         This guarantee applies within each sector, not globally after weighting.
         """
-        if type(count) is not int or count < 0 or type(dimension) is not int or (dimension < 1):
+        if (
+            type(count) is not int
+            or count < 0
+            or type(dimension) is not int
+            or (dimension < 1)
+        ):
             raise ValueError("Invalid LHS shape")
         rng = np.random.default_rng(seed)
         if count == 0:
             return np.empty((0, dimension), dtype=np.float64)
         return np.column_stack(
-            [(rng.permutation(count) + rng.random(count)) / count for _ in range(dimension)]
+            [
+                (rng.permutation(count) + rng.random(count)) / count
+                for _ in range(dimension)
+            ]
         )
 
     def keyed_seed(seed, family, sector):
@@ -2069,7 +2359,10 @@ def load_wave_training(BUNDLE, settings=None):
             raise ValueError("Unsupported sampling family")
         boxes = sector_boxes(protocol, config)
         masses = np.array(
-            [protocol[family + "_ratios"][b["id"]] if focused else b["volume"] for b in boxes]
+            [
+                protocol[family + "_ratios"][b["id"]] if focused else b["volume"]
+                for b in boxes
+            ]
         )
         fractions = masses / masses.max() / (masses / masses.max()).sum()
         counts = apportion(total, masses)
@@ -2081,7 +2374,9 @@ def load_wave_training(BUNDLE, settings=None):
             low32, high32 = (lo.astype(np.float32), hi.astype(np.float32))
             if np.any(high32 <= np.nextafter(low32, np.float32(np.inf))):
                 raise ValueError("Sector width is too narrow for float32 coordinates")
-            points = np.clip(points, np.nextafter(low32, high32), np.nextafter(high32, low32))
+            points = np.clip(
+                points, np.nextafter(low32, high32), np.nextafter(high32, low32)
+            )
             pieces.append(points)
             evidence.append(
                 {
@@ -2095,7 +2390,8 @@ def load_wave_training(BUNDLE, settings=None):
                     "unit_lhs_marginals_verified": all(
                         (
                             np.array_equal(
-                                np.sort(np.floor(unit[:, d] * count).astype(int)), np.arange(count)
+                                np.sort(np.floor(unit[:, d] * count).astype(int)),
+                                np.arange(count),
                             )
                             for d in range(3)
                         )
@@ -2130,7 +2426,9 @@ def load_wave_training(BUNDLE, settings=None):
         n = SECTOR_EVALUATION_PROTOCOL["points_per_sector"]
         for index, box in enumerate(boxes):
             u = randomized_lhs(
-                n, 3, keyed_seed(SECTOR_EVALUATION_PROTOCOL["seed"], "evaluation", box["id"])
+                n,
+                3,
+                keyed_seed(SECTOR_EVALUATION_PROTOCOL["seed"], "evaluation", box["id"]),
             )
             lo, hi = (np.array(box["lower"]), np.array(box["upper"]))
             p = (lo + (hi - lo) * u).astype(np.float32)
@@ -2149,7 +2447,9 @@ def load_wave_training(BUNDLE, settings=None):
             with np.load(path, allow_pickle=False) as archive:
                 stored = {k: archive[k] for k in archive.files}
             if arrays_digest(stored) != arrays_digest(arrays):
-                raise RuntimeError("Sector evaluation points changed; continuation blocked")
+                raise RuntimeError(
+                    "Sector evaluation points changed; continuation blocked"
+                )
         else:
             np.savez_compressed(path, **arrays)
         return arrays
@@ -2205,11 +2505,16 @@ def load_wave_training(BUNDLE, settings=None):
             raise RuntimeError("Matched iteration checkpoint is missing or ambiguous")
         checkpoint = matches[0]
         state = json.loads((checkpoint / "state.json").read_text())
-        if state["iteration"] != iteration or state["history"][-1]["iteration"] != iteration:
+        if (
+            state["iteration"] != iteration
+            or state["history"][-1]["iteration"] != iteration
+        ):
             raise RuntimeError("Matched checkpoint history mismatch")
         return (checkpoint, state)
 
-    def evaluate_sector_checkpoint(trial, config, arrays, protocol, evaluation, iteration):
+    def evaluate_sector_checkpoint(
+        trial, config, arrays, protocol, evaluation, iteration
+    ):
         """Evaluate the common-iteration checkpoint, never silently use best/last."""
         trial = Path(trial)
         checkpoint, state = checkpoint_at_iteration(trial, iteration)
@@ -2239,13 +2544,18 @@ def load_wave_training(BUNDLE, settings=None):
         reload_metrics = field_metrics(model, arrays)
         if not all(
             (
-                np.isclose(reload_metrics[k], state["history"][-1][k], rtol=0.0002, atol=2e-06)
+                np.isclose(
+                    reload_metrics[k], state["history"][-1][k], rtol=0.0002, atol=2e-06
+                )
                 for k in ("relative_l1", "relative_l2", "mse")
             )
         ):
             raise RuntimeError("Matched checkpoint reload metric mismatch")
         if not np.isclose(
-            float(model.lambda_1.numpy()), state["history"][-1]["lambda_1"], rtol=1e-06, atol=1e-07
+            float(model.lambda_1.numpy()),
+            state["history"][-1]["lambda_1"],
+            rtol=1e-06,
+            atol=1e-07,
         ):
             raise RuntimeError("Matched checkpoint coefficient mismatch")
         before = [w.numpy().copy() for w in model.weights]
@@ -2254,17 +2564,23 @@ def load_wave_training(BUNDLE, settings=None):
         for i in range(0, len(evaluation["coordinates"]), batch):
             p = evaluation["coordinates"][i : i + batch]
             pred.append(
-                model(tf.convert_to_tensor(p, tf.float32), training=False).numpy().reshape(-1)
+                model(tf.convert_to_tensor(p, tf.float32), training=False)
+                .numpy()
+                .reshape(-1)
             )
             residual.append(independent_residual(model, p).numpy().reshape(-1))
         pred, residual = (np.concatenate(pred), np.concatenate(residual))
         if (
             len(before) != len(model.weights)
-            or not all((np.array_equal(a, b.numpy()) for a, b in zip(before, model.weights)))
+            or not all(
+                (np.array_equal(a, b.numpy()) for a, b in zip(before, model.weights))
+            )
             or sha256(weights) != evidence["weights_sha256"]
         ):
             raise RuntimeError("Model changed during sector evaluation")
-        rows = sector_metrics(evaluation, pred, residual, sector_boxes(protocol, config))
+        rows = sector_metrics(
+            evaluation, pred, residual, sector_boxes(protocol, config)
+        )
         report = {
             "evidence": evidence,
             "reload_checks_passed": True,
@@ -2275,12 +2591,17 @@ def load_wave_training(BUNDLE, settings=None):
         staging = target.with_name(target.name + "_" + uuid.uuid4().hex + ".tmp")
         staging.mkdir(exist_ok=False)
         write_json(staging / "report.json", report)
-        with (staging / "sector_metrics.csv").open("w", newline="", encoding="utf-8") as f:
+        with (staging / "sector_metrics.csv").open(
+            "w", newline="", encoding="utf-8"
+        ) as f:
             writer = csv.DictWriter(f, fieldnames=list(rows[0]))
             writer.writeheader()
             writer.writerows(rows)
         np.savez_compressed(
-            staging / "predictions.npz", **evaluation, prediction=pred, residual=residual
+            staging / "predictions.npz",
+            **evaluation,
+            prediction=pred,
+            residual=residual,
         )
         write_json(
             staging / "complete.json",
@@ -2310,11 +2631,17 @@ def load_wave_training(BUNDLE, settings=None):
             result["X_supervised_train"].astype(np.float64), config
         ).astype(np.float32)
         unchanged = all(
-            (np.array_equal(source[k], result[k]) for k in source if k not in CHANGED_ARRAYS)
+            (
+                np.array_equal(source[k], result[k])
+                for k in source
+                if k not in CHANGED_ARRAYS
+            )
         )
         audit = data_audit(result, config)
         if not unchanged or not audit["passed"]:
-            raise RuntimeError("Sampling changed protected arrays or failed the data audit")
+            raise RuntimeError(
+                "Sampling changed protected arrays or failed the data audit"
+            )
         return (
             result,
             {
@@ -2333,7 +2660,9 @@ def load_wave_training(BUNDLE, settings=None):
             },
         )
 
-    def prepare_sector_trial(root, source, config, protocol, case, seed, context, initial_path):
+    def prepare_sector_trial(
+        root, source, config, protocol, case, seed, context, initial_path
+    ):
         """Persist immutable inputs before optimizer construction; validate on resume."""
         root = Path(root)
         expected, report = make_sector_trial(source, config, protocol, case, seed)
@@ -2362,7 +2691,9 @@ def load_wave_training(BUNDLE, settings=None):
             with np.load(root / "sampling_data.npz", allow_pickle=False) as archive:
                 loaded = {k: archive[k] for k in archive.files}
             if arrays_digest(loaded) != arrays_digest(expected):
-                raise RuntimeError("Stored sampling data differ from deterministic reconstruction")
+                raise RuntimeError(
+                    "Stored sampling data differ from deterministic reconstruction"
+                )
             return (loaded, report)
         staging = root.with_name(root.name + "_" + uuid.uuid4().hex + ".tmp")
         staging.mkdir(parents=True, exist_ok=False)
@@ -2371,14 +2702,19 @@ def load_wave_training(BUNDLE, settings=None):
         write_json(staging / "sampling_report.json", report)
         write_json(staging / "source_config.json", config)
         write_json(staging / "sampling_protocol.json", protocol)
-        with (staging / "sector_allocation.csv").open("w", newline="", encoding="utf-8") as f:
+        with (staging / "sector_allocation.csv").open(
+            "w", newline="", encoding="utf-8"
+        ) as f:
             writer = csv.DictWriter(f, fieldnames=list(report["sectors"][0]))
             writer.writeheader()
             writer.writerows(report["sectors"])
         names = [p.name for p in staging.iterdir() if p.is_file()]
         write_json(
             staging / "input_manifest.json",
-            {"context": expected_context, "files": {n: sha256(staging / n) for n in names}},
+            {
+                "context": expected_context,
+                "files": {n: sha256(staging / n) for n in names},
+            },
         )
         staging.rename(root)
         return (expected, report)
@@ -2399,7 +2735,12 @@ def load_wave_training(BUNDLE, settings=None):
         for seed in seeds:
             histories = {}
             for case in protocol["cases"]:
-                p = Path(root) / f"seed_{seed}_{case}" / "data_warmup_inverse" / "result.json"
+                p = (
+                    Path(root)
+                    / f"seed_{seed}_{case}"
+                    / "data_warmup_inverse"
+                    / "result.json"
+                )
                 if not p.is_file():
                     raise RuntimeError("A sampling trial result is missing")
                 result = json.loads(p.read_text())
@@ -2409,11 +2750,15 @@ def load_wave_training(BUNDLE, settings=None):
                     or not state["history"]
                     or state["iteration"] > maximum_iterations
                 ):
-                    raise RuntimeError("Sampling trial is incomplete or exceeds its budget")
+                    raise RuntimeError(
+                        "Sampling trial is incomplete or exceeds its budget"
+                    )
                 history = state["history"]
                 joint = [h for h in history if h.get("phase") == "joint"]
                 if not joint:
-                    raise RuntimeError("At least one joint-training observation is required")
+                    raise RuntimeError(
+                        "At least one joint-training observation is required"
+                    )
                 histories[case] = {h["iteration"]: h for h in joint}
                 trials.append(
                     {
@@ -2523,11 +2868,18 @@ def load_wave_training(BUNDLE, settings=None):
 
     def sa_update_due(iteration, enabled):
         offset = iteration - PERIODIC_POLICY["warmup_updates"] - 1
-        return bool(enabled and offset >= 0 and (offset % PERIODIC_POLICY["sa_update_period"] == 0))
+        return bool(
+            enabled
+            and offset >= 0
+            and (offset % PERIODIC_POLICY["sa_update_period"] == 0)
+        )
 
     def balanced_factors(previous, norms):
         """Bounded EMA inverse shared-network gradient norm; no loss-value fitting."""
-        previous, norms = (np.asarray(previous, dtype=float), np.asarray(norms, dtype=float))
+        previous, norms = (
+            np.asarray(previous, dtype=float),
+            np.asarray(norms, dtype=float),
+        )
         if (
             previous.shape != (4,)
             or norms.shape != (4,)
@@ -2542,13 +2894,22 @@ def load_wave_training(BUNDLE, settings=None):
         target = np.ones(4)
         scaled = norms[active] / norms[active].max()
         target[active] = np.clip(
-            scaled.mean() / scaled, PERIODIC_POLICY["factor_min"], PERIODIC_POLICY["factor_max"]
+            scaled.mean() / scaled,
+            PERIODIC_POLICY["factor_min"],
+            PERIODIC_POLICY["factor_max"],
         )
         return PERIODIC_POLICY["ema"] * previous + (1 - PERIODIC_POLICY["ema"]) * target
 
     def effective_weights(base, factors, warming=False):
-        base, factors = (np.asarray(base, dtype=float), np.asarray(factors, dtype=float))
-        if base.shape != (4,) or factors.shape != (4,) or (not np.isfinite([base, factors]).all()):
+        base, factors = (
+            np.asarray(base, dtype=float),
+            np.asarray(factors, dtype=float),
+        )
+        if (
+            base.shape != (4,)
+            or factors.shape != (4,)
+            or (not np.isfinite([base, factors]).all())
+        ):
             raise ValueError("Invalid loss weights")
         if np.any(base <= 0) or np.any(factors < 0.25) or np.any(factors > 4):
             raise ValueError("Loss weights out of bounds")
@@ -2576,7 +2937,9 @@ def load_wave_training(BUNDLE, settings=None):
         cycle_seed = keyed_seed(seed, "periodic-all-training-v1", str(cycle))
         d = config["domain"]
         evidence = []
-        for family, focused in zip(("supervised", "collocation"), SECTOR_CASES[allocation]):
+        for family, focused in zip(
+            ("supervised", "collocation"), SECTOR_CASES[allocation]
+        ):
             key = f"X_{family}_train"
             result[key], rows = family_samples(
                 protocol, config, family, focused, cycle_seed, len(source[key])
@@ -2584,7 +2947,9 @@ def load_wave_training(BUNDLE, settings=None):
             evidence.extend(rows)
 
         def surface(count, axes, label):
-            unit = randomized_lhs(count, len(axes), keyed_seed(cycle_seed, label, "surface"))
+            unit = randomized_lhs(
+                count, len(axes), keyed_seed(cycle_seed, label, "surface")
+            )
             lo = np.array([d[a + "_min"] for a in axes], dtype=np.float32)
             hi = np.array([d[a + "_max"] for a in axes], dtype=np.float32)
             coords = (lo + (hi - lo) * unit).astype(np.float32)
@@ -2639,7 +3004,9 @@ def load_wave_training(BUNDLE, settings=None):
             if len(np.unique(pts, axis=0)) != len(pts) or any(
                 (tuple(row) in held_out for row in pts.tolist())
             ):
-                raise RuntimeError("Training duplicates/held-out overlap; no silent retry")
+                raise RuntimeError(
+                    "Training duplicates/held-out overlap; no silent retry"
+                )
         return (
             result,
             {
@@ -2657,11 +3024,15 @@ def load_wave_training(BUNDLE, settings=None):
 
     def validation_field_metrics(model, tensors):
         truth = tensors["u_supervised"].numpy().astype(float)
-        prediction = model(tensors["X_supervised"], training=False).numpy().astype(float)
+        prediction = (
+            model(tensors["X_supervised"], training=False).numpy().astype(float)
+        )
         delta = prediction - truth
         return {
             "relative_l1": float(np.abs(delta).sum() / max(np.abs(truth).sum(), 1e-12)),
-            "relative_l2": float(np.linalg.norm(delta) / max(np.linalg.norm(truth), 1e-12)),
+            "relative_l2": float(
+                np.linalg.norm(delta) / max(np.linalg.norm(truth), 1e-12)
+            ),
         }
 
     def make_periodic_state(config, initial_path):
@@ -2675,8 +3046,12 @@ def load_wave_training(BUNDLE, settings=None):
             )
         )
         optimizer.build(all_vars)
-        factors = tf.Variable(np.ones(4, np.float32), trainable=False, name="loss_term_factors")
-        updates = tf.Variable(0, trainable=False, dtype=tf.int64, name="loss_term_update_count")
+        factors = tf.Variable(
+            np.ones(4, np.float32), trainable=False, name="loss_term_factors"
+        )
+        updates = tf.Variable(
+            0, trainable=False, dtype=tf.int64, name="loss_term_update_count"
+        )
         checkpoint = tf.train.Checkpoint(
             model=model, optimizer=optimizer, factors=factors, sa_updates=updates
         )
@@ -2689,7 +3064,9 @@ def load_wave_training(BUNDLE, settings=None):
             variables = network if warming else all_vars
             with tf.GradientTape() as tape:
                 loss = calculate_losses_2d(model, data, training=True)
-                objective = tf.add_n([weights[i] * loss[k] for i, k in enumerate(TERM_NAMES)])
+                objective = tf.add_n(
+                    [weights[i] * loss[k] for i, k in enumerate(TERM_NAMES)]
+                )
             grads = tape.gradient(objective, variables)
             if any((g is None for g in grads)):
                 raise RuntimeError("Disconnected weighted objective")
@@ -2719,7 +3096,9 @@ def load_wave_training(BUNDLE, settings=None):
         model, optimizer, factors, updates = state[:4]
         return [
             v.numpy().copy()
-            for v in list(model.variables) + list(optimizer.variables) + [factors, updates]
+            for v in list(model.variables)
+            + list(optimizer.variables)
+            + [factors, updates]
         ]
 
     def assert_same_state(a, b, approximate=False):
@@ -2727,7 +3106,9 @@ def load_wave_training(BUNDLE, settings=None):
             raise RuntimeError("Restored state variable count changed")
         for x, y in zip(a, b):
             if x.shape != y.shape or not (
-                np.allclose(x, y, rtol=1e-06, atol=1e-07) if approximate else np.array_equal(x, y)
+                np.allclose(x, y, rtol=1e-06, atol=1e-07)
+                if approximate
+                else np.array_equal(x, y)
             ):
                 raise RuntimeError("Model/optimizer/SA state mismatch")
 
@@ -2748,7 +3129,11 @@ def load_wave_training(BUNDLE, settings=None):
         updates.assign_add(1)
         step = periodic_stepper(model, optimizer, variables, network)
         coefficient = float(model.lambda_1.numpy())
-        step(data, tf.constant(effective_weights(base, np.ones(4), True), tf.float32), True)
+        step(
+            data,
+            tf.constant(effective_weights(base, np.ones(4), True), tf.float32),
+            True,
+        )
         if float(model.lambda_1.numpy()) != coefficient:
             raise RuntimeError("Warmup changed physical coefficient")
         w = tf.constant(effective_weights(base, factors.numpy()), tf.float32)
@@ -2761,7 +3146,9 @@ def load_wave_training(BUNDLE, settings=None):
             other_step = periodic_stepper(clone[0], clone[1], clone[5], clone[6])
             step(data, w, False)
             other_step(data, w, False)
-            assert_same_state(state_values(state), state_values(clone), approximate=True)
+            assert_same_state(
+                state_values(state), state_values(clone), approximate=True
+            )
         return {
             "passed": True,
             "baseline_loss_equivalence": True,
@@ -2780,7 +3167,9 @@ def load_wave_training(BUNDLE, settings=None):
             raise ValueError("Unknown arm/budget")
         root = Path(root)
         if root.exists():
-            raise FileExistsError("Never overwrite or silently continue a changed experiment")
+            raise FileExistsError(
+                "Never overwrite or silently continue a changed experiment"
+            )
         root.mkdir(parents=True)
         state = make_periodic_state(config, initial_path)
         model, optimizer, factors, updates, checkpoint, variables, network = state
@@ -2799,7 +3188,8 @@ def load_wave_training(BUNDLE, settings=None):
             metrics = field_metrics(model, source)
             validation = validation_field_metrics(model, tensors["val"])
             losses = {
-                split: loss_record(model, tensors[split]) for split in ("train", "val", "test")
+                split: loss_record(model, tensors[split])
+                for split in ("train", "val", "test")
             }
             current = effective_weights(base, factors.numpy(), warming)
             row = {
@@ -2848,13 +3238,17 @@ def load_wave_training(BUNDLE, settings=None):
         for iteration in range(1, cap + 1):
             cycle = sampling_cycle(iteration)
             if cycle != evidence["cycle"]:
-                selected, evidence = training_lhs(source, config, protocol, allocation, seed, cycle)
+                selected, evidence = training_lhs(
+                    source, config, protocol, allocation, seed, cycle
+                )
                 tensors = arrays_to_tensors(selected)
                 sampling.append(evidence)
             warming = iteration <= PERIODIC_POLICY["warmup_updates"]
             if sa_update_due(iteration, enabled):
                 norms = term_norms(model, network, tensors["train"])
-                factors.assign(balanced_factors(factors.numpy(), norms).astype(np.float32))
+                factors.assign(
+                    balanced_factors(factors.numpy(), norms).astype(np.float32)
+                )
                 updates.assign_add(1)
                 adaptive.append(
                     {
@@ -2864,7 +3258,9 @@ def load_wave_training(BUNDLE, settings=None):
                         "factors": factors.numpy().tolist(),
                     }
                 )
-            weights = tf.constant(effective_weights(base, factors.numpy(), warming), tf.float32)
+            weights = tf.constant(
+                effective_weights(base, factors.numpy(), warming), tf.float32
+            )
             step(tensors["train"], weights, warming)
             if warming and float(model.lambda_1.numpy()) != 0.5:
                 raise RuntimeError("Warmup lambda invariant failed")
@@ -2895,7 +3291,9 @@ def load_wave_training(BUNDLE, settings=None):
         write_json(root / "result.json", report)
         return report
 
-    def review_periodic_trial(root, config, source, protocol, allocation, seed, arm, initial_path):
+    def review_periodic_trial(
+        root, config, source, protocol, allocation, seed, arm, initial_path
+    ):
         root = Path(root)
         report = json.loads((root / "result.json").read_text())
         if not report.get("complete") or (
@@ -2912,14 +3310,24 @@ def load_wave_training(BUNDLE, settings=None):
             or int(restored[3].numpy()) != last["sa_updates"]
         ):
             raise RuntimeError("Optimizer/SA counter restore mismatch")
-        if not np.array_equal(restored[2].numpy(), np.asarray(last["factors"], np.float32)):
+        if not np.array_equal(
+            restored[2].numpy(), np.asarray(last["factors"], np.float32)
+        ):
             raise RuntimeError("Adaptive factors restore mismatch")
         regenerated, evidence = training_lhs(
-            source, config, protocol, allocation, seed, sampling_cycle(last["iteration"])
+            source,
+            config,
+            protocol,
+            allocation,
+            seed,
+            sampling_cycle(last["iteration"]),
         )
         with np.load(root / "current_training_data.npz", allow_pickle=False) as archive:
             stored = {k: archive[k] for k in archive.files}
-        if arrays_digest(stored) != evidence["arrays_sha256"] or evidence != report["sampling"][-1]:
+        if (
+            arrays_digest(stored) != evidence["arrays_sha256"]
+            or evidence != report["sampling"][-1]
+        ):
             raise RuntimeError("Sampler state/coordinates restore mismatch")
         before = state_values(restored)
         metrics = field_metrics(restored[0], source)
@@ -2931,12 +3339,17 @@ def load_wave_training(BUNDLE, settings=None):
         ):
             raise RuntimeError("Reload field metric mismatch")
         if not np.isclose(
-            float(restored[0].lambda_1.numpy()), last["lambda_1"], rtol=1e-06, atol=1e-07
+            float(restored[0].lambda_1.numpy()),
+            last["lambda_1"],
+            rtol=1e-06,
+            atol=1e-07,
         ):
             raise RuntimeError("Reload physical coefficient mismatch")
         assert_same_state(before, state_values(restored))
         next_cycle = sampling_cycle(last["iteration"] + 1)
-        _, next_evidence = training_lhs(source, config, protocol, allocation, seed, next_cycle)
+        _, next_evidence = training_lhs(
+            source, config, protocol, allocation, seed, next_cycle
+        )
         return {
             "passed": True,
             "iteration": last["iteration"],
@@ -2994,7 +3407,9 @@ def load_wave_training(BUNDLE, settings=None):
                             continue
                         files[name] = sha256(p)
                         z.write(p, name)
-                z.writestr("periodic_manifest.json", json.dumps({"version": 1, "files": files}))
+                z.writestr(
+                    "periodic_manifest.json", json.dumps({"version": 1, "files": files})
+                )
             inspect_periodic_zip(temporary)
             os.replace(temporary, target)
         finally:
@@ -3081,7 +3496,10 @@ def load_wave_training(BUNDLE, settings=None):
         e = config["equation"]
         if e["lambda_initial"] != 0.5 or e["lambda_target"] != 1.0:
             raise ValueError("This comparison contracts lambda initial=.5, target=1")
-        if config["method_comparison"]["fourier"] != {"feature_count": 32, "scale": 1.0}:
+        if config["method_comparison"]["fourier"] != {
+            "feature_count": 32,
+            "scale": 1.0,
+        }:
             raise ValueError("Expected fixed Fourier feature_count=32, scale=1")
         if config["loss_weights"] != {k: 1.0 for k in TERM_NAMES}:
             raise ValueError("Expected four equal baseline weights")
@@ -3090,7 +3508,9 @@ def load_wave_training(BUNDLE, settings=None):
             "activation": "tanh",
             "dtype": "float32",
         }:
-            raise ValueError("Unexpected architecture; requires a new benchmark contract")
+            raise ValueError(
+                "Unexpected architecture; requires a new benchmark contract"
+            )
 
     def w8_weights(arm, iteration, factors):
         spec = W8_ARMS[arm]
@@ -3099,13 +3519,17 @@ def load_wave_training(BUNDLE, settings=None):
         if spec["curriculum"] and (not warming):
             c = W8_POLICY["curriculum"]
             f = min(1.0, max(0.0, (iteration - 2001) / c["ramp_updates"]))
-            constraint = c["constraint_start"] + f * (c["constraint_end"] - c["constraint_start"])
+            constraint = c["constraint_start"] + f * (
+                c["constraint_end"] - c["constraint_start"]
+            )
             physics = c["physics_start"] + f * (c["physics_end"] - c["physics_start"])
             base = [constraint, constraint, physics, c["supervised"]]
         return effective_weights(base, factors if spec["sa"] else np.ones(4), warming)
 
     def w8_target(history):
-        checks = [r for r in history if r["iteration"] >= 3000 and r["iteration"] % 1000 == 0]
+        checks = [
+            r for r in history if r["iteration"] >= 3000 and r["iteration"] % 1000 == 0
+        ]
         if len(checks) < 3:
             return False
         last = checks[-3:]
@@ -3125,7 +3549,9 @@ def load_wave_training(BUNDLE, settings=None):
         if arm not in W8_ARMS or seed not in W8_SEEDS:
             raise ValueError("Unknown method or seed")
         tf.keras.utils.set_random_seed(seed)
-        model = WavePINN2DComparison(config, use_fourier=W8_ARMS[arm]["ff"], fourier_seed=seed)
+        model = WavePINN2DComparison(
+            config, use_fourier=W8_ARMS[arm]["ff"], fourier_seed=seed
+        )
         model(tf.zeros((1, 3), tf.float32))
         variables = list(model.trainable_variables)
         network = [v for v in variables if v is not model.lambda_1]
@@ -3136,7 +3562,9 @@ def load_wave_training(BUNDLE, settings=None):
             )
         )
         optimizer.build(variables)
-        factors = tf.Variable(np.ones(4, np.float32), trainable=False, name="loss_term_factors")
+        factors = tf.Variable(
+            np.ones(4, np.float32), trainable=False, name="loss_term_factors"
+        )
         updates = tf.Variable(0, dtype=tf.int64, trainable=False, name="sa_updates")
         checkpoint = tf.train.Checkpoint(
             model=model, optimizer=optimizer, factors=factors, sa_updates=updates
@@ -3171,14 +3599,20 @@ def load_wave_training(BUNDLE, settings=None):
             before = state_values(state)
             norms = term_norms(model, network, probe)
             assert_same_state(before, state_values(state))
-            step(probe, tf.constant(w8_weights(arm, 2000, factors.numpy()), tf.float32), True)
+            step(
+                probe,
+                tf.constant(w8_weights(arm, 2000, factors.numpy()), tf.float32),
+                True,
+            )
             if float(model.lambda_1.numpy()) != 0.5:
                 raise RuntimeError("Warmup changed lambda")
             if int(updates.numpy()) or not np.array_equal(factors.numpy(), np.ones(4)):
                 raise RuntimeError("Warmup changed SA state")
             if W8_ARMS[arm]["sa"]:
                 norms = term_norms(model, network, probe)
-                factors.assign(balanced_factors(factors.numpy(), norms).astype(np.float32))
+                factors.assign(
+                    balanced_factors(factors.numpy(), norms).astype(np.float32)
+                )
                 updates.assign_add(1)
             weights = tf.constant(w8_weights(arm, 2001, factors.numpy()), tf.float32)
             step(probe, weights, False)
@@ -3191,8 +3625,12 @@ def load_wave_training(BUNDLE, settings=None):
                 if w8_ff_digest(model) != w8_ff_digest(clone[0]):
                     raise RuntimeError("FF reconstruction mismatch")
                 step(probe, weights, False)
-                periodic_stepper(clone[0], clone[1], clone[5], clone[6])(probe, weights, False)
-                assert_same_state(state_values(state), state_values(clone), approximate=True)
+                periodic_stepper(clone[0], clone[1], clone[5], clone[6])(
+                    probe, weights, False
+                )
+                assert_same_state(
+                    state_values(state), state_values(clone), approximate=True
+                )
             checks.append(
                 {
                     "arm": arm,
@@ -3239,13 +3677,17 @@ def load_wave_training(BUNDLE, settings=None):
                 "phase": "warmup" if iteration <= 2000 else "joint",
                 "reference_metrics": field_metrics(model, source),
                 "validation_metrics": validation_field_metrics(model, tensors["val"]),
-                "losses": {s: loss_record(model, tensors[s]) for s in ("train", "val", "test")},
+                "losses": {
+                    s: loss_record(model, tensors[s]) for s in ("train", "val", "test")
+                },
                 "lambda_1": float(model.lambda_1.numpy()),
                 "elapsed_seconds": time.perf_counter() - started,
                 "optimizer_iterations": int(optimizer.iterations.numpy()),
                 "sa_updates": int(updates.numpy()),
                 "factors": factors.numpy().tolist(),
-                "effective_weights": w8_weights(arm, iteration, factors.numpy()).tolist(),
+                "effective_weights": w8_weights(
+                    arm, iteration, factors.numpy()
+                ).tolist(),
             }
             finite = [
                 *row["reference_metrics"].values(),
@@ -3275,7 +3717,9 @@ def load_wave_training(BUNDLE, settings=None):
         for iteration in range(1, cap + 1):
             cycle = sampling_cycle(iteration)
             if cycle != evidence["cycle"]:
-                arrays, evidence = training_lhs(source, config, protocol, "volume_lhs", seed, cycle)
+                arrays, evidence = training_lhs(
+                    source, config, protocol, "volume_lhs", seed, cycle
+                )
                 tensors = arrays_to_tensors(arrays)
                 samples.append(evidence)
                 print(
@@ -3287,7 +3731,9 @@ def load_wave_training(BUNDLE, settings=None):
                 )
             if sa_update_due(iteration, W8_ARMS[arm]["sa"]):
                 norms = term_norms(model, network, tensors["train"])
-                factors.assign(balanced_factors(factors.numpy(), norms).astype(np.float32))
+                factors.assign(
+                    balanced_factors(factors.numpy(), norms).astype(np.float32)
+                )
                 updates.assign_add(1)
                 adaptive.append(
                     {
@@ -3340,7 +3786,12 @@ def load_wave_training(BUNDLE, settings=None):
     def w8_review_trial(root, config, source, protocol, arm, seed, cap):
         root = Path(root)
         r = json.loads((root / "result.json").read_text())
-        if not r.get("complete") or (r["arm"], r["sampling_seed"], r["network_seed"], r["cap"]) != (
+        if not r.get("complete") or (
+            r["arm"],
+            r["sampling_seed"],
+            r["network_seed"],
+            r["cap"],
+        ) != (
             arm,
             seed,
             seed,
@@ -3350,7 +3801,9 @@ def load_wave_training(BUNDLE, settings=None):
         last, it = (r["last"], r["last"]["iteration"])
         if it > cap or (it < cap and (cap != 100000 or not w8_target(r["history"]))):
             raise ValueError("Incomplete trial or invalid early stopping")
-        if r["history"][-1] != last or last["target_reached"] != w8_target(r["history"]):
+        if r["history"][-1] != last or last["target_reached"] != w8_target(
+            r["history"]
+        ):
             raise ValueError("Target/history mismatch")
         state = w8_make_state(config, arm, seed)
         if (
@@ -3366,14 +3819,19 @@ def load_wave_training(BUNDLE, settings=None):
             or expected_updates != last["sa_updates"]
         ):
             raise ValueError("Optimizer / SA counter mismatch")
-        if not np.array_equal(state[2].numpy(), np.asarray(last["factors"], np.float32)):
+        if not np.array_equal(
+            state[2].numpy(), np.asarray(last["factors"], np.float32)
+        ):
             raise ValueError("SA state mismatch")
         regenerated, evidence = training_lhs(
             source, config, protocol, "volume_lhs", seed, sampling_cycle(it)
         )
         with np.load(root / "current_training_data.npz", allow_pickle=False) as z:
             stored = {k: z[k] for k in z.files}
-        if arrays_digest(stored) != arrays_digest(regenerated) or evidence != r["sampling"][-1]:
+        if (
+            arrays_digest(stored) != arrays_digest(regenerated)
+            or evidence != r["sampling"][-1]
+        ):
             raise ValueError("Restored LHS data mismatch")
         if [s["cycle"] for s in r["sampling"]] != list(range(sampling_cycle(it) + 1)):
             raise ValueError("Missing / duplicated resampling cycle")
@@ -3388,14 +3846,19 @@ def load_wave_training(BUNDLE, settings=None):
             (val, last["validation_metrics"]),
         ):
             if not all(
-                (np.isclose(actuals[k], v, rtol=0.0003, atol=3e-06) for k, v in expected.items())
+                (
+                    np.isclose(actuals[k], v, rtol=0.0003, atol=3e-06)
+                    for k, v in expected.items()
+                )
             ):
                 raise RuntimeError("CPU / GPU reload metric mismatch")
         if not np.isclose(
             float(state[0].lambda_1.numpy()), last["lambda_1"], rtol=1e-06, atol=1e-07
         ):
             raise RuntimeError("Reload lambda mismatch")
-        losses = {s: loss_record(state[0], tensors[s]) for s in ("train", "val", "test")}
+        losses = {
+            s: loss_record(state[0], tensors[s]) for s in ("train", "val", "test")
+        }
         if not all(
             (
                 np.isclose(losses[s][k], v, rtol=0.001, atol=1e-05)
@@ -3406,7 +3869,9 @@ def load_wave_training(BUNDLE, settings=None):
             raise RuntimeError("Reload derivative/loss mismatch")
         assert_same_state(before, state_values(state))
         next_cycle = sampling_cycle(it + 1)
-        _, next_evidence = training_lhs(source, config, protocol, "volume_lhs", seed, next_cycle)
+        _, next_evidence = training_lhs(
+            source, config, protocol, "volume_lhs", seed, next_cycle
+        )
         return {
             "passed": True,
             "arm": arm,
@@ -3435,7 +3900,9 @@ def load_wave_training(BUNDLE, settings=None):
             if {r["arm"] for r in group} != set(W8_ARMS):
                 raise ValueError("Missing method")
             count = min((len(r["sampling"]) for r in group))
-            if any((r["sampling"][:count] != group[0]["sampling"][:count] for r in group)):
+            if any(
+                (r["sampling"][:count] != group[0]["sampling"][:count] for r in group)
+            ):
                 raise ValueError("Five-arm sampling not paired")
             for architecture in (False, True):
                 if (
@@ -3469,7 +3936,8 @@ def load_wave_training(BUNDLE, settings=None):
                 "seed": r["sampling_seed"],
                 **r["last"],
                 "stop_reason": r["stop_reason"],
-                "reference_target_met": r["last"]["reference_metrics"]["relative_l2"] <= 0.1,
+                "reference_target_met": r["last"]["reference_metrics"]["relative_l2"]
+                <= 0.1,
                 "lambda_absolute_error": abs(r["last"]["lambda_1"] - 1.0),
             }
             for r in reports
@@ -3485,7 +3953,9 @@ def load_wave_training(BUNDLE, settings=None):
                     float(np.std(values, ddof=1)) if len(values) > 1 else None
                 ),
                 "validation_target_count": sum((r["target_reached"] for r in final)),
-                "reference_target_count": sum((r["reference_target_met"] for r in final)),
+                "reference_target_count": sum(
+                    (r["reference_target_met"] for r in final)
+                ),
                 "trial_count": len(final),
                 "censored_at_100k": sum(
                     (r["stop_reason"] == "safety_cap_goal_unmet" for r in final)
@@ -3531,12 +4001,18 @@ def load_wave_training(BUNDLE, settings=None):
                 alpha=0.65,
                 label=label,
             )
-            axes[1].plot(x, [v["lambda_1"] for v in h], color=colors[r["arm"]], alpha=0.65)
+            axes[1].plot(
+                x, [v["lambda_1"] for v in h], color=colors[r["arm"]], alpha=0.65
+            )
             axes[2].plot(
-                x, [v["losses"]["val"]["physics"] for v in h], color=colors[r["arm"]], alpha=0.65
+                x,
+                [v["losses"]["val"]["physics"] for v in h],
+                color=colors[r["arm"]],
+                alpha=0.65,
             )
         for ax, title in zip(
-            axes, ("Reference relative L2", "Learned lambda", "Fixed validation PDE MSE")
+            axes,
+            ("Reference relative L2", "Learned lambda", "Fixed validation PDE MSE"),
         ):
             ax.set_title(title)
             ax.set_xlabel("Total optimizer updates")
@@ -3554,9 +4030,9 @@ def load_wave_training(BUNDLE, settings=None):
         x = np.linspace(d["x_min"], d["x_max"], 65)
         y = np.linspace(d["y_min"], d["y_max"], 65)
         xx, yy = np.meshgrid(x, y, indexing="ij")
-        points = np.column_stack((xx.ravel(), yy.ravel(), np.full(xx.size, d["t_max"]))).astype(
-            np.float32
-        )
+        points = np.column_stack(
+            (xx.ravel(), yy.ravel(), np.full(xx.size, d["t_max"]))
+        ).astype(np.float32)
         truth = exact_numpy(points.astype(float), config).reshape(xx.shape)
         predictions = []
         for arm in W8_ARMS:
@@ -3564,8 +4040,12 @@ def load_wave_training(BUNDLE, settings=None):
             state[4].read(
                 str(Path(root) / "trials" / ("seed_3234_" + arm) / "state")
             ).assert_consumed()
-            predictions.append(state[0](points, training=False).numpy().reshape(xx.shape))
-        limit = max(float(abs(truth).max()), max((float(abs(p).max()) for p in predictions)))
+            predictions.append(
+                state[0](points, training=False).numpy().reshape(xx.shape)
+            )
+        limit = max(
+            float(abs(truth).max()), max((float(abs(p).max()) for p in predictions))
+        )
         error_limit = max((float(abs(p - truth).max()) for p in predictions))
         fig, axes = plt.subplots(3, 5, figsize=(16, 9), constrained_layout=True)
         for j, (arm, pred) in enumerate(zip(W8_ARMS, predictions)):
@@ -3602,7 +4082,14 @@ def load_wave_training(BUNDLE, settings=None):
         if (
             not s.get("paired_sampling_verified")
             or len(s.get("reload_checks", [])) != 8
-            or (not all((r.get("passed") and r.get("cpu_runtime") for r in s["reload_checks"])))
+            or (
+                not all(
+                    (
+                        r.get("passed") and r.get("cpu_runtime")
+                        for r in s["reload_checks"]
+                    )
+                )
+            )
         ):
             raise ValueError("Target10 CPU reload gate incomplete")
         ancestor = c
@@ -3659,12 +4146,18 @@ def load_wave_training(BUNDLE, settings=None):
         pass
 
     def lb_pack(variables):
-        return np.concatenate([v.numpy().reshape(-1).astype(np.float64) for v in variables])
+        return np.concatenate(
+            [v.numpy().reshape(-1).astype(np.float64) for v in variables]
+        )
 
     def lb_assign(variables, position):
         position = np.asarray(position, np.float64)
         sizes = [int(np.prod(v.shape)) for v in variables]
-        if position.ndim != 1 or len(position) != sum(sizes) or (not np.isfinite(position).all()):
+        if (
+            position.ndim != 1
+            or len(position) != sum(sizes)
+            or (not np.isfinite(position).all())
+        ):
             raise LBNonFinite("Invalid flat parameter vector")
         offset = 0
         for variable, size in zip(variables, sizes):
@@ -3679,11 +4172,16 @@ def load_wave_training(BUNDLE, settings=None):
         def evaluate():
             with tf.GradientTape() as tape:
                 losses = calculate_losses_2d(model, data, training=False)
-                objective = tf.add_n([weights[j] * losses[k] for j, k in enumerate(TERM_NAMES)])
+                objective = tf.add_n(
+                    [weights[j] * losses[k] for j, k in enumerate(TERM_NAMES)]
+                )
             gradients = tape.gradient(objective, variables)
             if any((g is None for g in gradients)):
                 raise RuntimeError("Disconnected L-BFGS parameter")
-            return (objective, tf.concat([tf.reshape(g, [-1]) for g in gradients], axis=0))
+            return (
+                objective,
+                tf.concat([tf.reshape(g, [-1]) for g in gradients], axis=0),
+            )
 
         def value_gradient(position):
             lb_assign(variables, position)
@@ -3691,7 +4189,9 @@ def load_wave_training(BUNDLE, settings=None):
             value = float(value.numpy())
             gradient = gradient.numpy().astype(np.float64)
             if not np.isfinite(value) or not np.isfinite(gradient).all():
-                raise LBNonFinite("Nonfinite loss/gradient from trial line-search point")
+                raise LBNonFinite(
+                    "Nonfinite loss/gradient from trial line-search point"
+                )
             return (value, gradient)
 
         return value_gradient
@@ -3744,7 +4244,9 @@ def load_wave_training(BUNDLE, settings=None):
             accepted = np.asarray(xk, np.float64).copy()
             accepted_iterations += 1
             value = (
-                cached_f if cached_x is not None and np.array_equal(cached_x, accepted) else None
+                cached_f
+                if cached_x is not None and np.array_equal(cached_x, accepted)
+                else None
             )
             log.append(
                 {
@@ -3823,7 +4325,10 @@ def load_wave_training(BUNDLE, settings=None):
         else:
             if candidate["lambda_1"] <= 0:
                 reasons.append("nonpositive_physical_coefficient")
-            if candidate["weighted_train_objective"] >= before["weighted_train_objective"]:
+            if (
+                candidate["weighted_train_objective"]
+                >= before["weighted_train_objective"]
+            ):
                 reasons.append("training_objective_not_lower")
             if (
                 candidate["validation_metrics"]["relative_l2"]
@@ -3840,7 +4345,9 @@ def load_wave_training(BUNDLE, settings=None):
     def lb_measure(state, arrays, source, weights):
         before = state_values(state)
         tensors = arrays_to_tensors(arrays)
-        losses = {s: loss_record(state[0], tensors[s]) for s in ("train", "val", "test")}
+        losses = {
+            s: loss_record(state[0], tensors[s]) for s in ("train", "val", "test")
+        }
         result = {
             "reference_metrics": field_metrics(state[0], source),
             "validation_metrics": validation_field_metrics(state[0], tensors["val"]),
@@ -3870,7 +4377,9 @@ def load_wave_training(BUNDLE, settings=None):
 
     def lb_parent_tree(root):
         manifest = json.loads((Path(root) / "periodic_manifest.json").read_text())
-        files = {p.relative_to(root).as_posix() for p in Path(root).rglob("*") if p.is_file()}
+        files = {
+            p.relative_to(root).as_posix() for p in Path(root).rglob("*") if p.is_file()
+        }
         if files != set(manifest["files"]) | {"periodic_manifest.json"}:
             raise ValueError("Parent inventory changed")
         for name, digest in manifest["files"].items():
@@ -3905,7 +4414,9 @@ def load_wave_training(BUNDLE, settings=None):
             "accepted_iterations": result["accepted_iterations"],
         }
 
-    def lb_trial(root, parent, config, source, protocol, arm, seed, parent_cap, profile):
+    def lb_trial(
+        root, parent, config, source, protocol, arm, seed, parent_cap, profile
+    ):
         root, parent = (Path(root), Path(parent))
         if profile not in ("smoke", "refine"):
             raise ValueError("Invalid L-BFGS profile")
@@ -3913,7 +4424,9 @@ def load_wave_training(BUNDLE, settings=None):
         parent_report = json.loads((parent / "result.json").read_text())
         state = w8_make_state(config, arm, seed)
         state[4].read(str(parent / "state")).assert_consumed()
-        with np.load(parent / "current_training_data.npz", allow_pickle=False) as archive:
+        with np.load(
+            parent / "current_training_data.npz", allow_pickle=False
+        ) as archive:
             arrays = {k: archive[k] for k in archive.files}
         arrays_sha = arrays_digest(arrays)
         frozen = lb_frozen_state(state)
@@ -3928,11 +4441,16 @@ def load_wave_training(BUNDLE, settings=None):
         first = objective(x0)
         second = objective(x0)
         if first[0] != second[0] or not np.array_equal(first[1], second[1]):
-            raise RuntimeError("L-BFGS objective is not deterministic at fixed parameters")
+            raise RuntimeError(
+                "L-BFGS objective is not deterministic at fixed parameters"
+            )
         np.testing.assert_array_equal(lb_pack(state[5]), x0)
         assert_same_state(frozen, lb_frozen_state(state))
         candidate_x, solver = lb_solve(
-            objective, x0, LB_POLICY[profile + "_iterations"], LB_POLICY[profile + "_evaluations"]
+            objective,
+            x0,
+            LB_POLICY[profile + "_iterations"],
+            LB_POLICY[profile + "_evaluations"],
         )
         lb_assign(state[5], candidate_x)
         candidate = lb_measure(state, arrays, source, weights)
@@ -3983,13 +4501,16 @@ def load_wave_training(BUNDLE, settings=None):
         )
         return report
 
-    def lb_review(root, parent, config, source, protocol, arm, seed, parent_cap, profile):
+    def lb_review(
+        root, parent, config, source, protocol, arm, seed, parent_cap, profile
+    ):
         root, parent = (Path(root), Path(parent))
         w8_review_trial(parent, config, source, protocol, arm, seed, parent_cap)
         report = json.loads((root / "result.json").read_text())
         if (
             not report.get("complete")
-            or (report["arm"], report["seed"], report["profile"]) != (arm, seed, profile)
+            or (report["arm"], report["seed"], report["profile"])
+            != (arm, seed, profile)
             or report["parent_result_sha256"] != sha256(parent / "result.json")
         ):
             raise ValueError("Postprocessing result identity/parent mismatch")
@@ -3997,7 +4518,9 @@ def load_wave_training(BUNDLE, settings=None):
         state = w8_make_state(config, arm, seed)
         state[4].read(str(parent / "state")).assert_consumed()
         frozen = lb_frozen_state(state)
-        with np.load(parent / "current_training_data.npz", allow_pickle=False) as archive:
+        with np.load(
+            parent / "current_training_data.npz", allow_pickle=False
+        ) as archive:
             arrays = {k: archive[k] for k in archive.files}
         weights = w8_weights(arm, parent_report["last"]["iteration"], state[2].numpy())
         if report["frozen_loss_weights"] != weights.tolist() or report[
@@ -4009,14 +4532,16 @@ def load_wave_training(BUNDLE, settings=None):
             or report["parent_adam_iteration"] != parent_report["last"]["iteration"]
         ):
             raise ValueError("Parent iteration/SA mismatch")
-        if report["ff_sha256"] != w8_ff_digest(state[0]) or report["decision"] != lb_decision(
-            report["before"], report["candidate"]
-        ):
+        if report["ff_sha256"] != w8_ff_digest(state[0]) or report[
+            "decision"
+        ] != lb_decision(report["before"], report["candidate"]):
             raise ValueError("FF/selection mismatch")
         solver = report["solver"]
         if (
             not 0 <= solver["accepted_iterations"] <= LB_POLICY[profile + "_iterations"]
-            or not 0 <= solver["objective_evaluations"] <= LB_POLICY[profile + "_evaluations"]
+            or not 0
+            <= solver["objective_evaluations"]
+            <= LB_POLICY[profile + "_evaluations"]
         ):
             raise ValueError("L-BFGS budget exceeded")
 
@@ -4062,7 +4587,9 @@ def load_wave_training(BUNDLE, settings=None):
 
     def lb_summary(reports, reviews, profile, new_evaluations):
         expected = {
-            (seed, arm) for seed in ([3234] if profile == "smoke" else W8_SEEDS) for arm in W8_ARMS
+            (seed, arm)
+            for seed in ([3234] if profile == "smoke" else W8_SEEDS)
+            for arm in W8_ARMS
         }
         if (
             {(r["seed"], r["arm"]) for r in reports} != expected
@@ -4087,11 +4614,15 @@ def load_wave_training(BUNDLE, settings=None):
                     **{
                         name: {
                             "reference_L2": r[name]["reference_metrics"]["relative_l2"],
-                            "validation_L2": r[name]["validation_metrics"]["relative_l2"],
+                            "validation_L2": r[name]["validation_metrics"][
+                                "relative_l2"
+                            ],
                             "lambda_absolute_error": abs(r[name]["lambda_1"] - 1.0),
                             "validation_PDE_MSE": r[name]["losses"]["val"]["physics"],
                             "test_PDE_MSE": r[name]["losses"]["test"]["physics"],
-                            "weighted_train_objective": r[name]["weighted_train_objective"],
+                            "weighted_train_objective": r[name][
+                                "weighted_train_objective"
+                            ],
                         }
                         for name in ("before", "candidate", "selected")
                     },
@@ -4131,7 +4662,9 @@ def load_wave_training(BUNDLE, settings=None):
         }
 
     print("SciPy:", scipy.__version__)
-    INTEGRATED_CODE_SHA256 = "d534bc13d7d40a7a63b7c3a510640dbaaf3a99af62113a93d4c4b24621a4aa5e"
+    INTEGRATED_CODE_SHA256 = (
+        "d534bc13d7d40a7a63b7c3a510640dbaaf3a99af62113a93d4c4b24621a4aa5e"
+    )
     # Historical Adam-to-L-BFGS orchestration. Defining these helpers does not
     # establish that the current distribution passed a fresh CPU execution check.
     import json
@@ -4141,7 +4674,9 @@ def load_wave_training(BUNDLE, settings=None):
     import sys
     from pathlib import Path
 
-    LEGACY_INTEGRATED_CODE = "6109a6e60944d9f11f0c6582b2ca3f6df4454bc6edc1a22b3182edb325169fbd"
+    LEGACY_INTEGRATED_CODE = (
+        "6109a6e60944d9f11f0c6582b2ca3f6df4454bc6edc1a22b3182edb325169fbd"
+    )
 
     def integrated_input_contract(stored, expected, profile):
         if stored == expected:
@@ -4186,7 +4721,9 @@ def load_wave_training(BUNDLE, settings=None):
             def flush(self):
                 self.file.flush()
 
-        with (folder / f"{phase}_seed_{seed}_{arm}.log").open("a", encoding="utf-8") as file:
+        with (folder / f"{phase}_seed_{seed}_{arm}.log").open(
+            "a", encoding="utf-8"
+        ) as file:
             with contextlib.redirect_stdout(TrialLog(file)):
                 try:
                     yield
@@ -4208,7 +4745,11 @@ def load_wave_training(BUNDLE, settings=None):
     def integrated_shape(profile):
         if profile not in ("smoke", "benchmark"):
             raise ValueError("Unknown integrated profile")
-        return ([3234], 5100, "smoke") if profile == "smoke" else (W8_SEEDS, 100000, "refine")
+        return (
+            ([3234], 5100, "smoke")
+            if profile == "smoke"
+            else (W8_SEEDS, 100000, "refine")
+        )
 
     def integrated_adam_lock(root, create=False):
         """Freeze the Adam TRIAL subtree; summary/figures may be re-evaluated on CPU."""
@@ -4231,7 +4772,9 @@ def load_wave_training(BUNDLE, settings=None):
             raise ValueError("Missing immutable Adam lock")
         return files
 
-    def integrated_adam(root, config, source, protocol, profile, review=False, boundary=None):
+    def integrated_adam(
+        root, config, source, protocol, profile, review=False, boundary=None
+    ):
         root = Path(root)
         seeds, cap, _ = integrated_shape(profile)
         if review:
@@ -4255,7 +4798,9 @@ def load_wave_training(BUNDLE, settings=None):
                     )
                 print("Adam start:", seed, arm, flush=True)
                 with integrated_log(root, "adam", seed, arm):
-                    result = w8_run_trial(trial, config, source, protocol, arm, seed, cap)
+                    result = w8_run_trial(
+                        trial, config, source, protocol, arm, seed, cap
+                    )
                 new_updates += result["last"]["iteration"]
                 w8_review_trial(trial, config, source, protocol, arm, seed, cap)
                 print(
@@ -4278,7 +4823,13 @@ def load_wave_training(BUNDLE, settings=None):
         for seed in seeds:
             for arm in W8_ARMS:
                 w8_review_trial(
-                    root / "trials" / f"seed_{seed}_{arm}", config, source, protocol, arm, seed, cap
+                    root / "trials" / f"seed_{seed}_{arm}",
+                    config,
+                    source,
+                    protocol,
+                    arm,
+                    seed,
+                    cap,
                 )
         integrated_adam_lock(root, create=not review)
         print(
@@ -4292,7 +4843,17 @@ def load_wave_training(BUNDLE, settings=None):
                 relative = Path("trials") / f"seed_{seed}_{arm}"
                 parent, trial = (root / relative, root / "postprocess" / relative)
                 if (trial / "result.json").exists():
-                    lb_review(trial, parent, config, source, protocol, arm, seed, cap, lb_profile)
+                    lb_review(
+                        trial,
+                        parent,
+                        config,
+                        source,
+                        protocol,
+                        arm,
+                        seed,
+                        cap,
+                        lb_profile,
+                    )
                     print("Reused L-BFGS:", seed, arm)
                     continue
                 if review:
@@ -4306,10 +4867,20 @@ def load_wave_training(BUNDLE, settings=None):
                 print("L-BFGS start:", seed, arm, flush=True)
                 with integrated_log(root, "lbfgs", seed, arm):
                     result = lb_trial(
-                        trial, parent, config, source, protocol, arm, seed, cap, lb_profile
+                        trial,
+                        parent,
+                        config,
+                        source,
+                        protocol,
+                        arm,
+                        seed,
+                        cap,
+                        lb_profile,
                     )
                 new_evaluations += result["solver"]["objective_evaluations"]
-                lb_review(trial, parent, config, source, protocol, arm, seed, cap, lb_profile)
+                lb_review(
+                    trial, parent, config, source, protocol, arm, seed, cap, lb_profile
+                )
                 integrated_adam_lock(root)
                 print("L-BFGS complete:", seed, arm, flush=True)
                 if boundary:
@@ -4332,12 +4903,24 @@ def load_wave_training(BUNDLE, settings=None):
                     w8_review_trial(parent, config, source, protocol, arm, seed, cap)
                 )
                 post_reviews.append(
-                    lb_review(trial, parent, config, source, protocol, arm, seed, cap, lb_profile)
+                    lb_review(
+                        trial,
+                        parent,
+                        config,
+                        source,
+                        protocol,
+                        arm,
+                        seed,
+                        cap,
+                        lb_profile,
+                    )
                 )
                 adam_reports.append(
                     json.loads((parent / "result.json").read_text(encoding="utf-8"))
                 )
-                post_reports.append(json.loads((trial / "result.json").read_text(encoding="utf-8")))
+                post_reports.append(
+                    json.loads((trial / "result.json").read_text(encoding="utf-8"))
+                )
         adam = w8_summary(adam_reports, adam_reviews, profile, new_updates)
         post = lb_summary(post_reports, post_reviews, lb_profile, new_evaluations)
         cpu = adam["cpu_reload_verified"] and post["cpu_reload_verified"]
@@ -4396,7 +4979,9 @@ def load_wave_training(BUNDLE, settings=None):
             raise ValueError(f"FF matrix reconstruction mismatch: {arm} seed={seed}")
         match = initial_hash == report["initialization_sha256"]
         if not cpu and (not match):
-            raise ValueError(f"GPU fresh initialization hash mismatch: {arm} seed={seed}")
+            raise ValueError(
+                f"GPU fresh initialization hash mismatch: {arm} seed={seed}"
+            )
         return {
             "review_revision": REVIEW_REVISION,
             "fresh_initialization_hash_matches": match,
@@ -4414,7 +4999,12 @@ def load_wave_training(BUNDLE, settings=None):
     def w8_review_trial(root, config, source, protocol, arm, seed, cap):
         root = Path(root)
         r = json.loads((root / "result.json").read_text(encoding="utf-8"))
-        if not r.get("complete") or (r["arm"], r["sampling_seed"], r["network_seed"], r["cap"]) != (
+        if not r.get("complete") or (
+            r["arm"],
+            r["sampling_seed"],
+            r["network_seed"],
+            r["cap"],
+        ) != (
             arm,
             seed,
             seed,
@@ -4424,7 +5014,9 @@ def load_wave_training(BUNDLE, settings=None):
         last, it = (r["last"], r["last"]["iteration"])
         if it > cap or (it < cap and (cap != 100000 or not w8_target(r["history"]))):
             raise ValueError("Incomplete trial or invalid early stopping")
-        if r["history"][-1] != last or last["target_reached"] != w8_target(r["history"]):
+        if r["history"][-1] != last or last["target_reached"] != w8_target(
+            r["history"]
+        ):
             raise ValueError("Target/history mismatch")
         state = w8_make_state(config, arm, seed)
         initialization = checkpoint_initialization_evidence(state, r, arm, seed)
@@ -4437,14 +5029,19 @@ def load_wave_training(BUNDLE, settings=None):
             or expected_updates != last["sa_updates"]
         ):
             raise ValueError("Optimizer / SA counter mismatch")
-        if not np.array_equal(state[2].numpy(), np.asarray(last["factors"], np.float32)):
+        if not np.array_equal(
+            state[2].numpy(), np.asarray(last["factors"], np.float32)
+        ):
             raise ValueError("SA state mismatch")
         regenerated, evidence = training_lhs(
             source, config, protocol, "volume_lhs", seed, sampling_cycle(it)
         )
         with np.load(root / "current_training_data.npz", allow_pickle=False) as z:
             stored = {k: z[k] for k in z.files}
-        if arrays_digest(stored) != arrays_digest(regenerated) or evidence != r["sampling"][-1]:
+        if (
+            arrays_digest(stored) != arrays_digest(regenerated)
+            or evidence != r["sampling"][-1]
+        ):
             raise ValueError("Restored LHS data mismatch")
         if [s["cycle"] for s in r["sampling"]] != list(range(sampling_cycle(it) + 1)):
             raise ValueError("Missing / duplicated resampling cycle")
@@ -4459,14 +5056,19 @@ def load_wave_training(BUNDLE, settings=None):
             (val, last["validation_metrics"]),
         ):
             if not all(
-                (np.isclose(actuals[k], v, rtol=0.0003, atol=3e-06) for k, v in expected.items())
+                (
+                    np.isclose(actuals[k], v, rtol=0.0003, atol=3e-06)
+                    for k, v in expected.items()
+                )
             ):
                 raise RuntimeError("CPU / GPU reload metric mismatch")
         if not np.isclose(
             float(state[0].lambda_1.numpy()), last["lambda_1"], rtol=1e-06, atol=1e-07
         ):
             raise RuntimeError("Reload lambda mismatch")
-        losses = {s: loss_record(state[0], tensors[s]) for s in ("train", "val", "test")}
+        losses = {
+            s: loss_record(state[0], tensors[s]) for s in ("train", "val", "test")
+        }
         if not all(
             (
                 np.isclose(losses[s][k], v, rtol=0.001, atol=1e-05)
@@ -4477,7 +5079,9 @@ def load_wave_training(BUNDLE, settings=None):
             raise RuntimeError("Reload derivative/loss mismatch")
         assert_same_state(before, state_values(state))
         next_cycle = sampling_cycle(it + 1)
-        _, next_evidence = training_lhs(source, config, protocol, "volume_lhs", seed, next_cycle)
+        _, next_evidence = training_lhs(
+            source, config, protocol, "volume_lhs", seed, next_cycle
+        )
         return {
             "passed": True,
             "arm": arm,
@@ -4611,7 +5215,10 @@ def load_wave_training(BUNDLE, settings=None):
         cfg = copy.deepcopy(config)
         cfg["model"]["layers"] = [3] + [spec["width"]] * spec["depth"] + [1]
         if spec["kind"] in ("plain", "single"):
-            cfg["method_comparison"]["fourier"] = {"feature_count": 32, "scale": spec["scales"][0]}
+            cfg["method_comparison"]["fourier"] = {
+                "feature_count": 32,
+                "scale": spec["scales"][0],
+            }
             model = WavePINN2DComparison(cfg, use_fourier=spec["ff"], fourier_seed=seed)
         else:
             model = WaveFFResearch(cfg, spec, seed)
@@ -4636,7 +5243,9 @@ def load_wave_training(BUNDLE, settings=None):
 
     def w8_ff_digest(model):
         if hasattr(model, "ff_banks"):
-            return arrays_digest({str(i): b.numpy() for i, b in enumerate(model.ff_banks)})
+            return arrays_digest(
+                {str(i): b.numpy() for i, b in enumerate(model.ff_banks)}
+            )
         return (
             None
             if model.fourier_matrix is None
@@ -4651,7 +5260,10 @@ def load_wave_training(BUNDLE, settings=None):
         with tf.GradientTape() as tape:
             physics = calculate_losses_2d(model, data, training=False)["physics"]
         derivative = tape.gradient(physics, model.lambda_1)
-        if derivative is None or not np.isfinite([*norms, float(derivative.numpy())]).all():
+        if (
+            derivative is None
+            or not np.isfinite([*norms, float(derivative.numpy())]).all()
+        ):
             raise RuntimeError("Nonfinite/disconnected FF diagnostic")
         assert_same_state(before, state_values(state))
         return {
@@ -4686,14 +5298,18 @@ def load_wave_training(BUNDLE, settings=None):
             initial[arm] = w8_model_digest(model)
             diagnostic = ff_observe(state, data)
             step = periodic_stepper(model, optimizer, variables, network)
-            step(data, tf.constant(w8_weights(arm, 2000, factors.numpy()), tf.float32), True)
+            step(
+                data,
+                tf.constant(w8_weights(arm, 2000, factors.numpy()), tf.float32),
+                True,
+            )
             if float(model.lambda_1.numpy()) != 0.5:
                 raise RuntimeError("Warmup changed lambda")
             if W8_ARMS[arm]["sa"]:
                 factors.assign(
-                    balanced_factors(factors.numpy(), term_norms(model, network, data)).astype(
-                        np.float32
-                    )
+                    balanced_factors(
+                        factors.numpy(), term_norms(model, network, data)
+                    ).astype(np.float32)
                 )
                 updates.assign_add(1)
             weights = tf.constant(w8_weights(arm, 2001, factors.numpy()), tf.float32)
@@ -4710,8 +5326,12 @@ def load_wave_training(BUNDLE, settings=None):
                 if w8_ff_digest(clone[0]) != digest:
                     raise RuntimeError("FF banks changed on restore")
                 step(data, weights, False)
-                periodic_stepper(clone[0], clone[1], clone[5], clone[6])(data, weights, False)
-                assert_same_state(state_values(state), state_values(clone), approximate=True)
+                periodic_stepper(clone[0], clone[1], clone[5], clone[6])(
+                    data, weights, False
+                )
+                assert_same_state(
+                    state_values(state), state_values(clone), approximate=True
+                )
             probes.append(
                 {
                     "arm": arm,
@@ -4723,7 +5343,10 @@ def load_wave_training(BUNDLE, settings=None):
                     "diagnostics": diagnostic,
                 }
             )
-        for pair in [("ff20_lr0005", "ff20_lr004"), ("spacetime64", "spacetime64_loss_sa")]:
+        for pair in [
+            ("ff20_lr0005", "ff20_lr004"),
+            ("spacetime64", "spacetime64_loss_sa"),
+        ]:
             if initial[pair[0]] != initial[pair[1]]:
                 raise RuntimeError("Paired initialization differs")
         return {
@@ -4765,10 +5388,18 @@ def load_wave_training(BUNDLE, settings=None):
                 )
             ):
                 raise ValueError("Sampling is not paired")
-            for x, y in [("ff20_lr0005", "ff20_lr004"), ("spacetime64", "spacetime64_loss_sa")]:
-                if group[x]["initialization_sha256"] != group[y]["initialization_sha256"]:
+            for x, y in [
+                ("ff20_lr0005", "ff20_lr004"),
+                ("spacetime64", "spacetime64_loss_sa"),
+            ]:
+                if (
+                    group[x]["initialization_sha256"]
+                    != group[y]["initialization_sha256"]
+                ):
                     raise ValueError("Paired initialization mismatch")
-        common = max(set.intersection(*[{r["iteration"] for r in t["history"]} for t in reports]))
+        common = max(
+            set.intersection(*[{r["iteration"] for r in t["history"]} for t in reports])
+        )
         matched = [
             {
                 "arm": t["arm"],
@@ -4788,10 +5419,16 @@ def load_wave_training(BUNDLE, settings=None):
         ]
         aggregate = {}
         for arm in W8_ARMS:
-            values = [r["reference_metrics"]["relative_l2"] for r in matched if r["arm"] == arm]
+            values = [
+                r["reference_metrics"]["relative_l2"]
+                for r in matched
+                if r["arm"] == arm
+            ]
             aggregate[arm] = {
                 "matched_reference_l2_mean": float(np.mean(values)),
-                "sample_std": float(np.std(values, ddof=1)) if len(values) > 1 else None,
+                "sample_std": (
+                    float(np.std(values, ddof=1)) if len(values) > 1 else None
+                ),
                 "validation_target_count": sum(
                     (r["target_reached"] for r in final if r["arm"] == arm)
                 ),
@@ -4856,15 +5493,18 @@ def load_wave_training(BUNDLE, settings=None):
         d = config["domain"]
         x, y = [np.linspace(d[a + "_min"], d[a + "_max"], 65) for a in "xy"]
         xx, yy = np.meshgrid(x, y, indexing="ij")
-        pts = np.column_stack([xx.ravel(), yy.ravel(), np.full(xx.size, d["t_max"])]).astype(
-            np.float32
-        )
+        pts = np.column_stack(
+            [xx.ravel(), yy.ravel(), np.full(xx.size, d["t_max"])]
+        ).astype(np.float32)
         truth = exact_numpy(pts.astype(float), config).reshape(xx.shape)
         predictions = []
         for arm in W8_ARMS:
             state = w8_make_state(config, arm, 3234)
             state[0].load_weights(
-                Path(root) / "postprocess/trials" / ("seed_3234_" + arm) / "selected.weights.h5"
+                Path(root)
+                / "postprocess/trials"
+                / ("seed_3234_" + arm)
+                / "selected.weights.h5"
             )
             predictions.append(state[0](pts, training=False).numpy().reshape(xx.shape))
         limit = max(np.abs(truth).max(), max((np.abs(p).max() for p in predictions)))
@@ -4872,7 +5512,11 @@ def load_wave_training(BUNDLE, settings=None):
         for arm, pred in zip(W8_ARMS, predictions):
             fig, axes = plt.subplots(1, 3, figsize=(10, 3), constrained_layout=True)
             for i, (ax, v, title) in enumerate(
-                zip(axes, [truth, pred, abs(pred - truth)], ["exact", "selected", "absolute error"])
+                zip(
+                    axes,
+                    [truth, pred, abs(pred - truth)],
+                    ["exact", "selected", "absolute error"],
+                )
             ):
                 im = ax.imshow(
                     v.T,
@@ -4910,13 +5554,17 @@ def load_wave_training(BUNDLE, settings=None):
                 "phase": "warmup" if iteration <= 2000 else "joint",
                 "reference_metrics": field_metrics(model, source),
                 "validation_metrics": validation_field_metrics(model, tensors["val"]),
-                "losses": {s: loss_record(model, tensors[s]) for s in ("train", "val", "test")},
+                "losses": {
+                    s: loss_record(model, tensors[s]) for s in ("train", "val", "test")
+                },
                 "lambda_1": float(model.lambda_1.numpy()),
                 "elapsed_seconds": time.perf_counter() - started,
                 "optimizer_iterations": int(optimizer.iterations.numpy()),
                 "sa_updates": int(updates.numpy()),
                 "factors": factors.numpy().tolist(),
-                "effective_weights": w8_weights(arm, iteration, factors.numpy()).tolist(),
+                "effective_weights": w8_weights(
+                    arm, iteration, factors.numpy()
+                ).tolist(),
             }
             finite = [
                 *row["reference_metrics"].values(),
@@ -4950,7 +5598,9 @@ def load_wave_training(BUNDLE, settings=None):
         for iteration in range(1, cap + 1):
             cycle = sampling_cycle(iteration)
             if cycle != evidence["cycle"]:
-                arrays, evidence = training_lhs(source, config, protocol, "volume_lhs", seed, cycle)
+                arrays, evidence = training_lhs(
+                    source, config, protocol, "volume_lhs", seed, cycle
+                )
                 tensors = arrays_to_tensors(arrays)
                 samples.append(evidence)
                 print(
@@ -4962,7 +5612,9 @@ def load_wave_training(BUNDLE, settings=None):
                 )
             if sa_update_due(iteration, W8_ARMS[arm]["sa"]):
                 norms = term_norms(model, network, tensors["train"])
-                factors.assign(balanced_factors(factors.numpy(), norms).astype(np.float32))
+                factors.assign(
+                    balanced_factors(factors.numpy(), norms).astype(np.float32)
+                )
                 updates.assign_add(1)
                 adaptive.append(
                     {
@@ -5089,7 +5741,9 @@ def load_wave_training(BUNDLE, settings=None):
         out["physics"] = d["physics"] / scales["physics"]
         out["supervised"] = d["supervised"] / scales["data"]
         out["total"] = (
-            0.5 * (out["initial"] + out["boundary"]) + out["physics"] + out["supervised"]
+            0.5 * (out["initial"] + out["boundary"])
+            + out["physics"]
+            + out["supervised"]
         ) / 3.0
         return out
 
@@ -5107,7 +5761,9 @@ def load_wave_training(BUNDLE, settings=None):
         key = str(seed) + "_" + model.normalization_family
         if key not in _norm_bank:
             if not allow_new:
-                raise ValueError("Stored normalization missing; no recalibration during review")
+                raise ValueError(
+                    "Stored normalization missing; no recalibration during review"
+                )
             labels = np.concatenate(
                 [
                     train["u_" + family + "_train"].astype(float).ravel()
@@ -5116,12 +5772,18 @@ def load_wave_training(BUNDLE, settings=None):
             )
             amplitude = float(np.sqrt(np.mean(labels**2)))
             duration = float(config["domain"]["t_max"] - config["domain"]["t_min"])
-            if not np.isfinite([amplitude, duration]).all() or amplitude <= 1e-12 or duration <= 0:
+            if (
+                not np.isfinite([amplitude, duration]).all()
+                or amplitude <= 1e-12
+                or duration <= 0
+            ):
                 raise ValueError(
                     "Physical scales require nonzero training amplitude and positive duration"
                 )
             before = [v.numpy().copy() for v in model.variables]
-            raw = _physical_losses(model, arrays_to_tensors(arrays)["train"], training=False)
+            raw = _physical_losses(
+                model, arrays_to_tensors(arrays)["train"], training=False
+            )
             raw = {k: float(v.numpy()) for k, v in raw.items()}
             for a, b in zip(before, model.variables):
                 np.testing.assert_array_equal(a, b.numpy())
@@ -5138,7 +5800,8 @@ def load_wave_training(BUNDLE, settings=None):
             }
             _norm_bank[key] = record
             write_json(
-                root / "normalization.json", {"policy": NORMALIZATION_POLICY, "seeds": _norm_bank}
+                root / "normalization.json",
+                {"policy": NORMALIZATION_POLICY, "seeds": _norm_bank},
             )
         record = _norm_bank[key]
         if any((record[k] != v for k, v in identity.items())):
@@ -5164,7 +5827,8 @@ def load_wave_training(BUNDLE, settings=None):
 
     def physical_loss_record(model, data):
         return {
-            k: float(v.numpy()) for k, v in _physical_losses(model, data, training=False).items()
+            k: float(v.numpy())
+            for k, v in _physical_losses(model, data, training=False).items()
         }
 
     def lb_measure(state, arrays, source, weights):
@@ -5172,9 +5836,12 @@ def load_wave_training(BUNDLE, settings=None):
         result = _unscaled_lb_measure(state, arrays, source, weights)
         tensors = arrays_to_tensors(arrays)
         result["physical_losses"] = {
-            s: physical_loss_record(state[0], tensors[s]) for s in ("train", "val", "test")
+            s: physical_loss_record(state[0], tensors[s])
+            for s in ("train", "val", "test")
         }
-        result["normalization_scales"] = copy.deepcopy(state[0].loss_normalization["group_scales"])
+        result["normalization_scales"] = copy.deepcopy(
+            state[0].loss_normalization["group_scales"]
+        )
         result["group_losses"] = {
             s: {
                 "physics": d["physics"],
@@ -5186,7 +5853,9 @@ def load_wave_training(BUNDLE, settings=None):
         assert_same_state(before, state_values(state))
         return result
 
-    CROSS_CODE_SHA256 = "1f1b147ec669ec1322cb9671be016d444f3b60031a097ca7982fcf199bef3877"
+    CROSS_CODE_SHA256 = (
+        "1f1b147ec669ec1322cb9671be016d444f3b60031a097ca7982fcf199bef3877"
+    )
     "Five-arm Wave inverse experiment; injected after FF and normalization helpers."
     import time
     import tempfile
@@ -5221,7 +5890,10 @@ def load_wave_training(BUNDLE, settings=None):
         "loss_sa": ff_spec("plain", sa=True),
         "ff": ff_spec("spacetime", scales=(0.125, 0.25, 0.5)),
         "ff_loss_sa": ff_spec("spacetime", scales=(0.125, 0.25, 0.5), sa=True),
-        "ff_curriculum": {**ff_spec("spacetime", scales=(0.125, 0.25, 0.5)), "curriculum": True},
+        "ff_curriculum": {
+            **ff_spec("spacetime", scales=(0.125, 0.25, 0.5)),
+            "curriculum": True,
+        },
     }
 
     def cross_lr(completed):
@@ -5253,7 +5925,9 @@ def load_wave_training(BUNDLE, settings=None):
         return np.array([b / 2, b / 2, p, d])
 
     def cross_target(history):
-        rows = [r for r in history if r["iteration"] >= 15000 and r["iteration"] % 1000 == 0]
+        rows = [
+            r for r in history if r["iteration"] >= 15000 and r["iteration"] % 1000 == 0
+        ]
         if len(rows) < 3:
             return False
         rows = rows[-3:]
@@ -5303,14 +5977,18 @@ def load_wave_training(BUNDLE, settings=None):
 
     def cross_stepper(state):
         model, opt, _, _, _, variables, network = state
-        indices = [next((i for i, v in enumerate(variables) if v is n)) for n in network]
+        indices = [
+            next((i for i, v in enumerate(variables) if v is n)) for n in network
+        ]
         li = next((i for i, v in enumerate(variables) if v is model.lambda_1))
 
         @tf.function(autograph=False)
         def step(data, weights):
             with tf.GradientTape() as tape:
                 terms = calculate_losses_2d(model, data, training=True)
-                loss = tf.add_n([weights[i] * terms[k] for i, k in enumerate(TERM_NAMES)])
+                loss = tf.add_n(
+                    [weights[i] * terms[k] for i, k in enumerate(TERM_NAMES)]
+                )
             grads = tape.gradient(loss, variables)
             for g in grads:
                 if g is None:
@@ -5326,11 +6004,17 @@ def load_wave_training(BUNDLE, settings=None):
         before = state_values(state)
         with tf.GradientTape(persistent=True) as tape:
             d = calculate_losses_2d(state[0], data, training=False)
-            groups = [d["physics"], d["supervised"], 0.5 * (d["initial"] + d["boundary"])]
+            groups = [
+                d["physics"],
+                d["supervised"],
+                0.5 * (d["initial"] + d["boundary"]),
+            ]
         norms = []
         for loss in groups:
             gs = tape.gradient(loss, state[6])
-            norms.append(float(tf.linalg.global_norm([g for g in gs if g is not None]).numpy()))
+            norms.append(
+                float(tf.linalg.global_norm([g for g in gs if g is not None]).numpy())
+            )
         del tape
         assert_same_state(before, state_values(state))
         norms = np.asarray(norms)
@@ -5343,12 +6027,16 @@ def load_wave_training(BUNDLE, settings=None):
 
     def cross_row(state, arrays, source, arm, iteration):
         before = state_values(state)
-        row = lb_measure(state, arrays, source, w8_weights(arm, iteration, state[2].numpy()))
+        row = lb_measure(
+            state, arrays, source, w8_weights(arm, iteration, state[2].numpy())
+        )
         row.update(
             iteration=iteration,
             cycle=sampling_cycle(iteration),
             optimizer_iterations=int(state[1].iterations.numpy()),
-            lambda_optimizer_iterations=int(state[1].lambda_optimizer.iterations.numpy()),
+            lambda_optimizer_iterations=int(
+                state[1].lambda_optimizer.iterations.numpy()
+            ),
             factors=state[2].numpy().tolist(),
             sa_updates=int(state[3].numpy()),
             next_lrs=list(cross_lr(iteration)),
@@ -5392,7 +6080,9 @@ def load_wave_training(BUNDLE, settings=None):
         for it in range(1, cap + 1):
             cycle = sampling_cycle(it)
             if cycle != evidence["cycle"]:
-                arrays, evidence = training_lhs(source, config, protocol, "volume_lhs", seed, cycle)
+                arrays, evidence = training_lhs(
+                    source, config, protocol, "volume_lhs", seed, cycle
+                )
                 if evidence["protected_sha256"] != protected:
                     raise RuntimeError("Heldout changed")
                 report["sampling"].append(evidence)
@@ -5400,11 +6090,17 @@ def load_wave_training(BUNDLE, settings=None):
             a, b = cross_lr(it - 1)
             state[1].learning_rate.assign(a)
             state[1].lambda_optimizer.learning_rate.assign(b)
-            step(data, tf.constant(w8_weights(arm, it - 1, state[2].numpy()), tf.float32))
+            step(
+                data, tf.constant(w8_weights(arm, it - 1, state[2].numpy()), tf.float32)
+            )
             if W8_ARMS[arm]["sa"] and it % 50 == 0:
                 norms = cross_sa(state, data)
                 report["adaptive_updates"].append(
-                    {"iteration": it, "norms": norms, "factors": state[2].numpy().tolist()}
+                    {
+                        "iteration": it,
+                        "norms": norms,
+                        "factors": state[2].numpy().tolist(),
+                    }
                 )
             if it % 1000 == 0 or it in (1, 100, 101, 5001, 10001, 15001) or it == cap:
                 row = cross_row(state, arrays, source, arm, it)
@@ -5427,7 +6123,9 @@ def load_wave_training(BUNDLE, settings=None):
             complete=True,
             last=report["history"][-1],
             stop_reason=(
-                "validation_target" if report["history"][-1]["target_reached"] else "cap_reached"
+                "validation_target"
+                if report["history"][-1]["target_reached"]
+                else "cap_reached"
             ),
         )
         cross_save(root, state, arrays, report)
@@ -5436,7 +6134,11 @@ def load_wave_training(BUNDLE, settings=None):
     def w8_review_trial(root, config, source, protocol, arm, seed, cap):
         root = Path(root)
         r = json.loads((root / "result.json").read_text())
-        if not r["complete"] or (r["arm"], r["sampling_seed"], r["cap"]) != (arm, seed, cap):
+        if not r["complete"] or (r["arm"], r["sampling_seed"], r["cap"]) != (
+            arm,
+            seed,
+            cap,
+        ):
             raise ValueError("Trial identity mismatch")
         state = w8_make_state(config, arm, seed)
         ff = w8_ff_digest(state[0])
@@ -5460,11 +6162,15 @@ def load_wave_training(BUNDLE, settings=None):
             raise ValueError("SA schedule mismatch")
         with np.load(root / "current_training_data.npz", allow_pickle=False) as a:
             arrays = {k: a[k] for k in a.files}
-        expected, e = training_lhs(source, config, protocol, "volume_lhs", seed, sampling_cycle(it))
+        expected, e = training_lhs(
+            source, config, protocol, "volume_lhs", seed, sampling_cycle(it)
+        )
         if arrays_digest(expected) != arrays_digest(arrays) or e != r["sampling"][-1]:
             raise ValueError("Saved arrays differ")
         measured = cross_row(state, arrays, source, arm, it)
-        if not np.isclose(measured["lambda_1"], r["last"]["lambda_1"], rtol=1e-06, atol=1e-07):
+        if not np.isclose(
+            measured["lambda_1"], r["last"]["lambda_1"], rtol=1e-06, atol=1e-07
+        ):
             raise ValueError("Lambda reload differs")
         for row in r["history"]:
             if row["next_lrs"] != list(cross_lr(row["iteration"])):
@@ -5474,7 +6180,12 @@ def load_wave_training(BUNDLE, settings=None):
                 != cross_groups(arm, row["iteration"], row["factors"]).tolist()
             ):
                 raise ValueError("Group weight record differs")
-        for k in ("reference_metrics", "validation_metrics", "physical_losses", "losses"):
+        for k in (
+            "reference_metrics",
+            "validation_metrics",
+            "physical_losses",
+            "losses",
+        ):
 
             def compare(a, b):
                 if isinstance(a, dict):
@@ -5522,11 +6233,17 @@ def load_wave_training(BUNDLE, settings=None):
                 clone = w8_make_state(config, arm, 3234)
                 clone[4].read(str(Path(tmp) / "state")).assert_consumed()
                 assert_same_state(state_values(state), state_values(clone))
-                weights = tf.constant(w8_weights(arm, 5000, state[2].numpy()), tf.float32)
+                weights = tf.constant(
+                    w8_weights(arm, 5000, state[2].numpy()), tf.float32
+                )
                 step(data, weights)
                 cross_stepper(clone)(data, weights)
-                assert_same_state(state_values(state), state_values(clone), approximate=True)
-            checks.append({"arm": arm, "two_optimizer_roundtrip": True, "same_next_update": True})
+                assert_same_state(
+                    state_values(state), state_values(clone), approximate=True
+                )
+            checks.append(
+                {"arm": arm, "two_optimizer_roundtrip": True, "same_next_update": True}
+            )
         assert initial["baseline"] == initial["loss_sa"]
         assert initial["ff"] == initial["ff_loss_sa"] == initial["ff_curriculum"]
         return {
@@ -5540,8 +6257,12 @@ def load_wave_training(BUNDLE, settings=None):
     import platform
 
     SOURCE_DIR = Path(tempfile.gettempdir()) / ("periodic_source_" + uuid.uuid4().hex)
-    wave2d_config, SOURCE_RESULTS, SOURCE_EVIDENCE = load_stage7_bundle(BUNDLE, SOURCE_DIR)
-    with np.load(SOURCE_DIR / "training/wave2d_data.npz", allow_pickle=False) as archive:
+    wave2d_config, SOURCE_RESULTS, SOURCE_EVIDENCE = load_stage7_bundle(
+        BUNDLE, SOURCE_DIR
+    )
+    with np.load(
+        SOURCE_DIR / "training/wave2d_data.npz", allow_pickle=False
+    ) as archive:
         SOURCE_ARRAYS = {k: archive[k] for k in archive.files}
     if not data_audit(SOURCE_ARRAYS, wave2d_config)["passed"]:
         raise RuntimeError("Source data audit failed")
@@ -5564,7 +6285,10 @@ def load_wave_training(BUNDLE, settings=None):
 
         def cross_lr(completed):
             return tuple(
-                float(np.interp(completed, settings["lr_knots"], settings[k]) * settings["base_lr"])
+                float(
+                    np.interp(completed, settings["lr_knots"], settings[k])
+                    * settings["base_lr"]
+                )
                 for k in ["network_ratios", "coefficient_ratios"]
             )
 
@@ -5577,12 +6301,14 @@ def load_wave_training(BUNDLE, settings=None):
             eligible = [
                 r
                 for r in history
-                if r["iteration"] >= settings["stop_first"] and r["iteration"] % every == 0
+                if r["iteration"] >= settings["stop_first"]
+                and r["iteration"] % every == 0
             ][-n:]
             return (
                 len(eligible) == n
                 and all(
-                    b["iteration"] - a["iteration"] == every for a, b in zip(eligible, eligible[1:])
+                    b["iteration"] - a["iteration"] == every
+                    for a, b in zip(eligible, eligible[1:])
                 )
                 and all(
                     r["validation_metrics"]["relative_l2"] <= settings["field_target"]

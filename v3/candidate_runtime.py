@@ -107,7 +107,11 @@ def load_candidate_runtime(policy=None):
             keys = (
                 [manifest]
                 if manifest
-                else ["unified_manifest.json", "periodic_manifest.json", "audit_manifest.json"]
+                else [
+                    "unified_manifest.json",
+                    "periodic_manifest.json",
+                    "audit_manifest.json",
+                ]
             )
             key = next((k for k in keys if k in names), None)
             if key is None:
@@ -150,7 +154,9 @@ def load_candidate_runtime(policy=None):
         with zipfile.ZipFile(bundle) as z:
             contract = json.loads(z.read("contract.json"))
             if contract.get("code_sha256") != expected_code:
-                raise ValueError("Different integrated code revision; review/export only")
+                raise ValueError(
+                    "Different integrated code revision; review/export only"
+                )
             if contract.get("policy") != U_POLICY:
                 raise ValueError("Different training/evaluation contract")
             z.extractall(root)
@@ -171,7 +177,10 @@ def load_candidate_runtime(policy=None):
 
     def u_lrs(completed):
         return [
-            float(np.interp(completed, U_POLICY["lr_knots"], U_POLICY[k]) * U_POLICY["base_lr"])
+            float(
+                np.interp(completed, U_POLICY["lr_knots"], U_POLICY[k])
+                * U_POLICY["base_lr"]
+            )
             for k in ["network_ratios", "coefficient_ratios"]
         ]
 
@@ -203,7 +212,8 @@ def load_candidate_runtime(policy=None):
             consecutive - 1
         ) and all(
             (
-                np.isfinite(r["validation_l2"]) and r["validation_l2"] <= U_POLICY["field_target"]
+                np.isfinite(r["validation_l2"])
+                and r["validation_l2"] <= U_POLICY["field_target"]
                 for r in rows
             )
         )
@@ -235,7 +245,10 @@ def load_candidate_runtime(policy=None):
             "cap": caps[profile],
             "seeds": seeds,
             "lbfgs_maxiter": 500 if profile in ["benchmark", "auto"] else 20,
-            "max_adam_updates": caps[profile] * len(seeds) * len(U_ARMS) * len(equations),
+            "max_adam_updates": caps[profile]
+            * len(seeds)
+            * len(U_ARMS)
+            * len(equations),
             "service_modules": "skipped_exp" if mode == "exp" else "requested",
             "reporting": "always_enabled",
             "training_authorized": caps[profile] > 0,
@@ -260,7 +273,10 @@ def load_candidate_runtime(policy=None):
             summary = json.loads(z.read("summary.json"))
             if c.get("experiment") != "wave_crosslr" or c.get("profile") != "benchmark":
                 raise ValueError("Need CrossLR benchmark")
-            if summary.get("status") != "complete" or summary.get("completed_trials") != 15:
+            if (
+                summary.get("status") != "complete"
+                or summary.get("completed_trials") != 15
+            ):
                 raise ValueError("Incomplete Wave benchmark")
             pairs = set()
             rows = []
@@ -286,23 +302,33 @@ def load_candidate_runtime(policy=None):
                 )
                 for kind, member in [
                     ("adam", f"trials/seed_{r['seed']}_{r['arm']}/result.json"),
-                    ("post", f"postprocess/trials/seed_{r['seed']}_{r['arm']}/result.json"),
+                    (
+                        "post",
+                        f"postprocess/trials/seed_{r['seed']}_{r['arm']}/result.json",
+                    ),
                 ]:
                     detail = json.loads(z.read(member))
-                    u_json(root / f"evidence/{kind}_seed_{r['seed']}_{r['arm']}.json", detail)
+                    u_json(
+                        root / f"evidence/{kind}_seed_{r['seed']}_{r['arm']}.json",
+                        detail,
+                    )
                     if kind == "adam":
-                        rows[-1]["adam_seconds_including_diagnostics"] = detail["last"].get(
-                            "elapsed_seconds"
+                        rows[-1]["adam_seconds_including_diagnostics"] = detail[
+                            "last"
+                        ].get("elapsed_seconds")
+                        rows[-1]["trainable_parameters"] = detail.get(
+                            "trainable_parameters"
                         )
-                        rows[-1]["trainable_parameters"] = detail.get("trainable_parameters")
                     else:
                         rows[-1]["lbfgs_objective_evaluations"] = detail["solver"][
                             "objective_evaluations"
                         ]
-                        rows[-1]["lbfgs_seconds_including_diagnostics"] = detail["solver"].get(
-                            "elapsed_seconds"
-                        )
-            if len(rows) != 15 or pairs != {(s, a) for s in [3234, 3235, 3236] for a in U_ARMS}:
+                        rows[-1]["lbfgs_seconds_including_diagnostics"] = detail[
+                            "solver"
+                        ].get("elapsed_seconds")
+            if len(rows) != 15 or pairs != {
+                (s, a) for s in [3234, 3235, 3236] for a in U_ARMS
+            }:
                 raise ValueError("Wave trial inventory mismatch")
             u_json(root / "evidence/wave_contract.json", c)
             u_json(root / "evidence/wave_summary.json", summary)
@@ -319,14 +345,25 @@ def load_candidate_runtime(policy=None):
                 s = json.loads(z.read("summary.json"))
                 if prov["input_sha256"]["parent"] != parent_hash:
                     raise ValueError("Physics audit belongs to another parent")
-                if s.get("status") != "complete" or s.get("completed_model_stages") != 30:
+                if (
+                    s.get("status") != "complete"
+                    or s.get("completed_model_stages") != 30
+                ):
                     raise ValueError("Incomplete physics audit")
                 for row in rows:
-                    trial = json.loads(z.read(f"trials/seed_{row['seed']}_{row['arm']}.json"))
+                    trial = json.loads(
+                        z.read(f"trials/seed_{row['seed']}_{row['arm']}.json")
+                    )
                     row["pde_grade"] = trial["score"]["pde_grade"]
-                    u_json(root / f"evidence/physics_seed_{row['seed']}_{row['arm']}.json", trial)
+                    u_json(
+                        root / f"evidence/physics_seed_{row['seed']}_{row['arm']}.json",
+                        trial,
+                    )
                 u_json(root / "evidence/physics_summary.json", s)
-                u_json(root / "evidence/physics_policy.json", json.loads(z.read("policy.json")))
+                u_json(
+                    root / "evidence/physics_policy.json",
+                    json.loads(z.read("policy.json")),
+                )
                 u_json(
                     root / "evidence/physics_normalization.json",
                     json.loads(z.read("normalization.json")),
@@ -362,7 +399,11 @@ def load_candidate_runtime(policy=None):
                 if not subset:
                     continue
                 fields = [r["field_l2"] for r in subset]
-                coeff = [r["lambda_error"] for r in subset if r.get("lambda_error") is not None]
+                coeff = [
+                    r["lambda_error"]
+                    for r in subset
+                    if r.get("lambda_error") is not None
+                ]
                 groups.append(
                     {
                         "equation": eq,
@@ -372,9 +413,15 @@ def load_candidate_runtime(policy=None):
                         "field_l2_sample_std": (
                             float(np.std(fields, ddof=1)) if len(fields) > 1 else None
                         ),
-                        "mean_adam_updates": float(np.mean([r["adam_iteration"] for r in subset])),
+                        "mean_adam_updates": float(
+                            np.mean([r["adam_iteration"] for r in subset])
+                        ),
                         "mean_lbfgs_objective_evaluations": (
-                            float(np.mean([r["lbfgs_objective_evaluations"] for r in subset]))
+                            float(
+                                np.mean(
+                                    [r["lbfgs_objective_evaluations"] for r in subset]
+                                )
+                            )
                             if all(("lbfgs_objective_evaluations" in r for r in subset))
                             else None
                         ),
@@ -491,7 +538,9 @@ def load_candidate_runtime(policy=None):
                 print(f"{i}: {p.name}")
             if not paths:
                 raise FileNotFoundError("No matching ZIP in PINN for " + label)
-            raw = input("Number / filename; Enter=only candidate; rescan / cancel: ").strip()
+            raw = input(
+                "Number / filename; Enter=only candidate; rescan / cancel: "
+            ).strip()
             if raw == "cancel":
                 raise RuntimeError("Cancelled")
             if raw == "rescan":
@@ -668,9 +717,9 @@ def load_candidate_runtime(policy=None):
         if name == "heat2d":
             return (g[:, 0, 2] - 0.1 * lap)[:, None]
         if name == "poisson2d":
-            return (-lap - 2 * np.pi**2 * np.sin(np.pi * z[:, 0]) * np.sin(np.pi * z[:, 1]))[
-                :, None
-            ]
+            return (
+                -lap - 2 * np.pi**2 * np.sin(np.pi * z[:, 0]) * np.sin(np.pi * z[:, 1])
+            )[:, None]
         if name == "darcy2d":
             sx, sy = (np.sin(np.pi * z[:, 0]), np.sin(np.pi * z[:, 1]))
             cx, cy = (np.cos(np.pi * z[:, 0]), np.cos(np.pi * z[:, 1]))
@@ -682,7 +731,12 @@ def load_candidate_runtime(policy=None):
             )
             return (-k * lap - kx * ux - ky * uy - forcing)[:, None]
         if name == "reaction_diffusion":
-            exact = 0.2 * np.sin(np.pi * z[:, 0]) * np.sin(np.pi * z[:, 1]) * np.exp(-z[:, 2])
+            exact = (
+                0.2
+                * np.sin(np.pi * z[:, 0])
+                * np.sin(np.pi * z[:, 1])
+                * np.exp(-z[:, 2])
+            )
             forcing = (-2 + 0.02 * np.pi**2) * exact + exact**3
             return (g[:, 0, 2] - 0.01 * lap - (u - u**3) - forcing)[:, None]
         raise ValueError(name)
@@ -695,7 +749,10 @@ def load_candidate_runtime(policy=None):
             dz = np.zeros_like(z)
             dz[:, j] = step
             p, m = (candidate_field(name, z + dz), candidate_field(name, z - dz))
-            pp, mm = (candidate_field(name, z + 2 * dz), candidate_field(name, z - 2 * dz))
+            pp, mm = (
+                candidate_field(name, z + 2 * dz),
+                candidate_field(name, z - 2 * dz),
+            )
             g[:, :, j] = (-pp + 8 * p - 8 * m + mm) / (12 * step)
             h[:, :, j] = (-pp + 16 * p - 30 * q + 16 * m - mm) / (12 * step**2)
         return (q, g, h)
@@ -727,16 +784,20 @@ def load_candidate_runtime(policy=None):
             second.append(
                 tf.stack(
                     [
-                        outer.gradient(v, X, unconnected_gradients=tf.UnconnectedGradients.ZERO)[
-                            :, j
-                        ]
+                        outer.gradient(
+                            v, X, unconnected_gradients=tf.UnconnectedGradients.ZERO
+                        )[:, j]
                         for j, v in enumerate(row)
                     ],
                     axis=1,
                 )
             )
         del inner, outer
-        return (q.numpy(), tf.stack(gradients, axis=1).numpy(), tf.stack(second, axis=1).numpy())
+        return (
+            q.numpy(),
+            tf.stack(gradients, axis=1).numpy(),
+            tf.stack(second, axis=1).numpy(),
+        )
 
     def candidate_points(name, count=128):
         domain = np.array(CANDIDATES[name]["domain"], float)
@@ -773,7 +834,9 @@ def load_candidate_runtime(policy=None):
             if name == "taylor_green":
                 l = candidate_tf(name, lo) if autodiff else candidate_fd(name, lo)
                 r = candidate_tf(name, hi) if autodiff else candidate_fd(name, hi)
-                error = max(float(np.max(abs(left - right))), float(np.max(abs(l[1] - r[1]))))
+                error = max(
+                    float(np.max(abs(left - right))), float(np.max(abs(l[1] - r[1])))
+                )
                 check = error < 1e-07
             elif config["boundary"] == "homogeneous Dirichlet":
                 error = float(max(np.max(abs(left)), np.max(abs(right))))
@@ -904,7 +967,9 @@ def load_candidate_runtime(policy=None):
                 [
                     tf.constant(
                         rng.normal(
-                            0, s, (len(domain), U_POLICY.get("ff_features_per_bank", 32))
+                            0,
+                            s,
+                            (len(domain), U_POLICY.get("ff_features_per_bank", 32)),
                         ).astype(np.float32)
                     )
                     for s in U_POLICY["ff_scales"]
@@ -960,7 +1025,9 @@ def load_candidate_runtime(policy=None):
             [
                 tf.stack(
                     [
-                        t2.gradient(v, x, unconnected_gradients=tf.UnconnectedGradients.ZERO)[:, j]
+                        t2.gradient(
+                            v, x, unconnected_gradients=tf.UnconnectedGradients.ZERO
+                        )[:, j]
                         for j, v in enumerate(row)
                     ],
                     axis=1,
@@ -1005,8 +1072,12 @@ def load_candidate_runtime(policy=None):
         if name == "darcy2d":
             cx, cy = (tf.cos(pi * x[:, 0]), tf.cos(pi * x[:, 1]))
             k = 1 + 0.5 * sx * sy
-            forcing = 2 * pi * pi * k * sx * sy - 0.5 * pi * pi * ((cx * sy) ** 2 + (sx * cy) ** 2)
-            return (-k * lap - 0.5 * pi * cx * sy * ux - 0.5 * pi * sx * cy * uy - forcing)[:, None]
+            forcing = 2 * pi * pi * k * sx * sy - 0.5 * pi * pi * (
+                (cx * sy) ** 2 + (sx * cy) ** 2
+            )
+            return (
+                -k * lap - 0.5 * pi * cx * sy * ux - 0.5 * pi * sx * cy * uy - forcing
+            )[:, None]
         if name == "reaction_diffusion":
             exact = 0.2 * sx * sy * tf.exp(-x[:, 2])
             forcing = (-2 + 0.02 * pi * pi) * exact + exact**3
@@ -1015,7 +1086,9 @@ def load_candidate_runtime(policy=None):
 
     def cu_lhs(domain, n, rng):
         domain = np.asarray(domain, float)
-        unit = np.column_stack([(rng.permutation(n) + rng.random(n)) / n for _ in domain])
+        unit = np.column_stack(
+            [(rng.permutation(n) + rng.random(n)) / n for _ in domain]
+        )
         return (domain[:, 0] + unit * (domain[:, 1] - domain[:, 0])).astype(np.float32)
 
     def cu_samples(name, seed, cycle, heldout=False):
@@ -1041,21 +1114,27 @@ def load_candidate_runtime(policy=None):
         for axis in range(len(d)):
             if axis == t:
                 continue
-            lower = cu_lhs(d, 80 if heldout else U_POLICY.get("boundary_count_per_face", 80), rng)
+            lower = cu_lhs(
+                d, 80 if heldout else U_POLICY.get("boundary_count_per_face", 80), rng
+            )
             upper = lower.copy()
             lower[:, axis] = d[axis, 0]
             upper[:, axis] = d[axis, 1]
             a[f"lower_{axis}"] = lower
             a[f"upper_{axis}"] = upper
         if t is not None:
-            a["initial"] = cu_lhs(d, 160 if heldout else U_POLICY.get("initial_count", 160), rng)
+            a["initial"] = cu_lhs(
+                d, 160 if heldout else U_POLICY.get("initial_count", 160), rng
+            )
             a["initial"][:, t] = d[t, 0]
         if len(c["outputs"]) == 3:
             a["gauge"] = cu_lhs(d, 32, rng)
             a["gauge"][:, :2] = 0.0
         for k in list(a):
             if k != "collocation":
-                a["label_" + k] = candidate_field(name, a[k].astype(float)).astype(np.float32)
+                a["label_" + k] = candidate_field(name, a[k].astype(float)).astype(
+                    np.float32
+                )
         return a
 
     def cu_scales(name):
@@ -1072,13 +1151,17 @@ def load_candidate_runtime(policy=None):
             nu = 0.0125
         if len(c["outputs"]) == 3:
             speed = max(amplitude[:2])
-            r = [speed**2 / length + amplitude[2] / length + nu * speed / length**2] * 2 + [
-                speed / length
-            ]
+            r = [
+                speed**2 / length + amplitude[2] / length + nu * speed / length**2
+            ] * 2 + [speed / length]
         elif name in ["poisson2d", "darcy2d"]:
             r = [amplitude[0] / length**2]
         elif name == "burgers":
-            r = [amplitude[0] + amplitude[0] ** 2 / length + nu * amplitude[0] / length**2]
+            r = [
+                amplitude[0]
+                + amplitude[0] ** 2 / length
+                + nu * amplitude[0] / length**2
+            ]
         else:
             r = [amplitude[0] + nu * amplitude[0] / length**2]
         return {
@@ -1109,8 +1192,14 @@ def load_candidate_runtime(policy=None):
             if name == "taylor_green":
                 q1, g1, _ = cu_derivatives(model, a[key])
                 q2, g2, _ = cu_derivatives(model, a[upper])
-                width = CANDIDATES[name]["domain"][axis][1] - CANDIDATES[name]["domain"][axis][0]
-                bc += [mse((q1 - q2) / fs), mse((g1[:, :, axis] - g2[:, :, axis]) * width / fs)]
+                width = (
+                    CANDIDATES[name]["domain"][axis][1]
+                    - CANDIDATES[name]["domain"][axis][0]
+                )
+                bc += [
+                    mse((q1 - q2) / fs),
+                    mse((g1[:, :, axis] - g2[:, :, axis]) * width / fs),
+                ]
             else:
                 n = 2 if len(scales["field"]) == 3 else 1
                 bc += [
@@ -1137,7 +1226,11 @@ def load_candidate_runtime(policy=None):
         factors = tf.Variable(np.ones(3, np.float32), trainable=False)
         count = tf.Variable(0, dtype=tf.int64, trainable=False)
         checkpoint = tf.train.Checkpoint(
-            model=m, optimizer=opt, coefficient_optimizer=lopt, factors=factors, sa_updates=count
+            model=m,
+            optimizer=opt,
+            coefficient_optimizer=lopt,
+            factors=factors,
+            sa_updates=count,
         )
         return (m, opt, lopt, factors, count, checkpoint, net)
 
@@ -1153,7 +1246,11 @@ def load_candidate_runtime(policy=None):
     def cu_assert_same(a, b, approx=False):
         if len(a) != len(b) or not all(
             (
-                np.allclose(x, y, rtol=1e-05, atol=1e-07) if approx else np.array_equal(x, y)
+                (
+                    np.allclose(x, y, rtol=1e-05, atol=1e-07)
+                    if approx
+                    else np.array_equal(x, y)
+                )
                 for x, y in zip(a, b)
             )
         ):
@@ -1176,14 +1273,22 @@ def load_candidate_runtime(policy=None):
                 lo.apply_gradients([(grads[-1], m.raw_coefficient)])
             return loss
 
-        return tf.function(step, autograph=False, reduce_retracing=True) if compiled else step
+        return (
+            tf.function(step, autograph=False, reduce_retracing=True)
+            if compiled
+            else step
+        )
 
     def cu_sa(state, a, scales):
         before = cu_values(state)
         with tf.GradientTape(persistent=True) as tape:
             terms = tf.unstack(cu_groups(state[0], a, scales))
         norms = [
-            float(tf.linalg.global_norm([g for g in tape.gradient(t, state[6]) if g is not None]))
+            float(
+                tf.linalg.global_norm(
+                    [g for g in tape.gradient(t, state[6]) if g is not None]
+                )
+            )
             for t in terms
         ]
         del tape
@@ -1191,7 +1296,9 @@ def load_candidate_runtime(policy=None):
         norms = np.asarray(norms)
         if not np.isfinite(norms).all():
             raise ValueError("Invalid SA gradients")
-        goal = np.clip(np.mean(norms) / np.maximum(norms, 1e-12), *U_POLICY["sa_bounds"])
+        goal = np.clip(
+            np.mean(norms) / np.maximum(norms, 1e-12), *U_POLICY["sa_bounds"]
+        )
         ema = U_POLICY["sa_ema"]
         state[3].assign(ema * state[3] + (1 - ema) * goal.astype(np.float32))
         state[4].assign_add(1)
@@ -1227,7 +1334,9 @@ def load_candidate_runtime(policy=None):
             "reference": ref,
             "coefficient": coeff,
             "lambda_error": (
-                abs(coeff / CANDIDATES[m.problem]["coefficient"] - 1) if m.inverse else None
+                abs(coeff / CANDIDATES[m.problem]["coefficient"] - 1)
+                if m.inverse
+                else None
             ),
             "validation_normalized_groups": losses.tolist(),
             "factors": state[3].numpy().tolist(),
@@ -1248,7 +1357,12 @@ def load_candidate_runtime(policy=None):
             q, g, h = cu_derivatives(model, x)
             for key, coefficient in views.items():
                 residual = candidate_residual(
-                    model.problem, x, q.numpy(), g.numpy(), h.numpy(), coefficient=coefficient
+                    model.problem,
+                    x,
+                    q.numpy(),
+                    g.numpy(),
+                    h.numpy(),
+                    coefficient=coefficient,
                 )
                 values[key].append(residual / np.asarray(scales["residual"]))
         report = {}
@@ -1287,10 +1401,16 @@ def load_candidate_runtime(policy=None):
                 raise ValueError("Neural PDE formula differs from independent equation")
         a, b = (cu_samples(name, 3234, 0), cu_samples(name, 3234, 1))
         if any(
-            (np.array_equal(a[k], b[k]) for k in a if not k.startswith("label_") and k != "gauge")
+            (
+                np.array_equal(a[k], b[k])
+                for k in a
+                if not k.startswith("label_") and k != "gauge"
+            )
         ):
             raise ValueError("Training family did not renew")
-        if u_digest(cu_samples(name, 3234, 0, True)) != u_digest(cu_samples(name, 3234, 8, True)):
+        if u_digest(cu_samples(name, 3234, 0, True)) != u_digest(
+            cu_samples(name, 3234, 8, True)
+        ):
             raise ValueError("Heldout changed")
         small = {k: tf.constant(v[:4]) for k, v in a.items()}
         scales = cu_scales(name)
@@ -1299,7 +1419,9 @@ def load_candidate_runtime(policy=None):
         for arm in U_ARMS:
             s = cu_state(name, arm, 3234)
             step = cu_stepper(s, scales, compiled=False)
-            initials[arm] = u_digest({f"v{i}": v.numpy() for i, v in enumerate(s[0].variables)})
+            initials[arm] = u_digest(
+                {f"v{i}": v.numpy() for i, v in enumerate(s[0].variables)}
+            )
             step(small, tf.constant(u_weights(arm, 0, np.ones(3)), tf.float32))
             if "loss_sa" in arm:
                 cu_sa(s, small, scales)
@@ -1330,7 +1452,9 @@ def load_candidate_runtime(policy=None):
         }
 
     def cu_save_weights(model, path):
-        np.savez_compressed(path, **{f"v{i}": v.numpy() for i, v in enumerate(model.variables)})
+        np.savez_compressed(
+            path, **{f"v{i}": v.numpy() for i, v in enumerate(model.variables)}
+        )
 
     def cu_load_weights(model, path):
         with np.load(path, allow_pickle=False) as a:
@@ -1357,7 +1481,9 @@ def load_candidate_runtime(policy=None):
         step = cu_stepper(s, scales)
         validation = cu_samples(name, 917221, 0, True)
         protected = u_digest(validation)
-        reference = cu_lhs(CANDIDATES[name]["domain"], 4096, np.random.default_rng(739921))
+        reference = cu_lhs(
+            CANDIDATES[name]["domain"], 4096, np.random.default_rng(739921)
+        )
         history = []
         sampling = []
         start = time.perf_counter()
@@ -1365,7 +1491,11 @@ def load_candidate_runtime(policy=None):
         first = 1
         if resume is not None:
             previous = json.loads((Path(resume) / "result.json").read_text())
-            if (previous["equation"], previous["arm"], previous["seed"]) != (name, arm, seed):
+            if (previous["equation"], previous["arm"], previous["seed"]) != (
+                name,
+                arm,
+                seed,
+            ):
                 raise ValueError("Resume identity mismatch")
             s[5].read(str(Path(resume) / "adam_state")).assert_consumed()
             first = previous["adam"]["iteration"] + 1
@@ -1393,7 +1523,15 @@ def load_candidate_runtime(policy=None):
             if it % U_POLICY["stop_every"] == 0 or it == cap:
                 r = cu_measure(s, validation, reference, scales, it)
                 history.append(r)
-                print(name, seed, arm, it, "val L2", round(r["validation_l2"], 6), flush=True)
+                print(
+                    name,
+                    seed,
+                    arm,
+                    it,
+                    "val L2",
+                    round(r["validation_l2"], 6),
+                    flush=True,
+                )
                 if u_target(history):
                     break
         adam_seconds = time.perf_counter() - start
@@ -1405,7 +1543,8 @@ def load_candidate_runtime(policy=None):
         adam = history[-1]
         weights = tf.constant(u_weights(arm, it, s[3].numpy()), tf.float32)
         frozen = [
-            v.numpy().copy() for v in list(s[1].variables) + list(s[2].variables) + [s[3], s[4]]
+            v.numpy().copy()
+            for v in list(s[1].variables) + list(s[2].variables) + [s[3], s[4]]
         ]
         variables = list(s[0].trainable_variables)
         shapes = [tuple(v.shape) for v in variables]
@@ -1453,7 +1592,9 @@ def load_candidate_runtime(policy=None):
             assign(solved.x)
             after, _ = objective(solved.x)
             candidate = cu_measure(s, validation, reference, scales, it)
-            accepted = bool(after <= before and candidate["validation_l2"] <= adam["validation_l2"])
+            accepted = bool(
+                after <= before and candidate["validation_l2"] <= adam["validation_l2"]
+            )
             solver = {
                 "success": bool(solved.success),
                 "message": str(solved.message),
@@ -1477,7 +1618,10 @@ def load_candidate_runtime(policy=None):
         cu_assert_same(test_before, cu_values(s))
         cu_assert_same(
             frozen,
-            [v.numpy().copy() for v in list(s[1].variables) + list(s[2].variables) + [s[3], s[4]]],
+            [
+                v.numpy().copy()
+                for v in list(s[1].variables) + list(s[2].variables) + [s[3], s[4]]
+            ],
         )
         cu_save_weights(s[0], root / "selected_weights.npz")
         report = {
@@ -1495,7 +1639,12 @@ def load_candidate_runtime(policy=None):
             "selected": selected,
             "post_candidate": candidate,
             "post_selected": accepted,
-            "solver": {**solver, "evaluations": calls, "before": before, "after": after},
+            "solver": {
+                **solver,
+                "evaluations": calls,
+                "before": before,
+                "after": after,
+            },
             "seconds": {"adam": adam_seconds, "lbfgs": time.perf_counter() - lb_start},
             "stop_reason": "validation_10pct" if u_target(history) else "cap_reached",
             "target_uses_reference_or_true_coefficient": False,
@@ -1552,7 +1701,9 @@ def load_candidate_runtime(policy=None):
         ]
         if r["sampling"] != expected_sampling:
             raise ValueError("Sampling cycle history mismatch")
-        reference = cu_lhs(CANDIDATES[name]["domain"], 4096, np.random.default_rng(739921))
+        reference = cu_lhs(
+            CANDIDATES[name]["domain"], 4096, np.random.default_rng(739921)
+        )
         a = cu_measure(s, validation, reference, r["scales"], it)
         for key in ["validation_l2", "coefficient"]:
             if not np.isclose(a[key], r["adam"][key], rtol=0.001, atol=1e-06):
@@ -1589,7 +1740,10 @@ def load_candidate_runtime(policy=None):
         r["reload_passed"] = True
         u_json(
             root / "reload.json",
-            {"passed": True, "cpu_runtime": not bool(tf.config.list_physical_devices("GPU"))},
+            {
+                "passed": True,
+                "cpu_runtime": not bool(tf.config.list_physical_devices("GPU")),
+            },
         )
         return r
 
@@ -1599,7 +1753,11 @@ def load_candidate_runtime(policy=None):
         return cu_trial(
             trial,
             settings["equation"],
-            settings["arms"][0] if len(settings["arms"]) == 1 else trial.name.split("_", 2)[2],
+            (
+                settings["arms"][0]
+                if len(settings["arms"]) == 1
+                else trial.name.split("_", 2)[2]
+            ),
             settings["seed"],
             settings["cap"],
             settings["lbfgs_maxiter"],
