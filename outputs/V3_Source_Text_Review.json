@@ -1,0 +1,56 @@
+{
+  "scope": "커널 타이머 대체 경로·하단 위젯 갱신·직접 질문·한국어 답변·사용자 시험 문항 추가. 보고서 표시를 제외한 수치 집계와 학습 수식·일정, Qwen 의도 판단과 검색 경로는 보존. 새 검사는 별도 런타임 보고서로 판정.",
+  "python_files_reviewed": 15,
+  "syntax_compilation": "passed",
+  "numerical_ast_unchanged": {
+    "candidate_runtime.py": true,
+    "wave_inference.py": true,
+    "wave_runtime.py": true,
+    "equations.py": true,
+    "contracts.py": true
+  },
+  "report_presentation_excluded_from_ast_comparison": true,
+  "new_checkpoint_factory_hook_excluded_from_ast_comparison": true,
+  "planner_and_hybrid_rag_ast_unchanged": {
+    "services.py": true,
+    "natural_language.py": false
+  },
+  "qwen_intent_functions_ast_unchanged": {
+    "un_llm_ask": true,
+    "un_local_llm": true,
+    "un_equations": true
+  },
+  "runtime_verification": "pending",
+  "training_executed": false,
+  "changes": [
+    "일반 비교 답변과 보고서의 반복 안내 축약; 필요한 질문의 확인·추가 설명은 유지",
+    "상단 최초 기능·파일 위치 선택, 60초 무입력 기본 조회와 하단 설정 연동",
+    "사용자 안내와 비교 보고서를 한국어로 정리",
+    "분리된 정의 셀은 기본 접힘, 하단 드롭다운 실행 패널과 바로 아래 결과 표시",
+    "Drive 인증 실패 상태 표시, 명시적 재연결·로컬 ZIP 전환",
+    "대표 노트북 안내를 공개 배포용 기능 설명과 실행 절차로 정리",
+    "결과·검사·학습 ZIP 파일명을 단순화하고 긴 이름 입력도 지원",
+    "모델 전수·Wave 재개·LHS 경계 검사를 선택 실행으로 통합",
+    "개인 작업 메모와 승격 절차를 개발자 문서로 분리",
+    "보고서 수치 집계·학습 일정·샘플링·Qwen 의도 판단·검색 경로 보존; 자연어 응답 표현과 추가 시험 기록은 변경",
+    "Colab 브라우저 콜백 타이머와 하단 안전 기본 조회 버튼 추가; 일반 노트북의 커널 타이머는 유지",
+    "자동 파일 위치에서 연결된 Drive·로컬 ZIP이 없을 때 연결 1회 시도; 화면 버전 안내 문구 제거"
+  ],
+  "files_sha256": {
+    "__init__.py": "05d13037636effebc9cd00f88e5bbbffeb79b3891aea3d91472a4186d3bee5f4",
+    "__main__.py": "edcfa584a1afd4f49611e3aed7f12f5e438061413e5439af0fbd96ff590cf3c7",
+    "candidate_runtime.py": "0706c513d0ba834df0c524626d8845d8ae7d1868a354ddd44a2464fcc41da1cf",
+    "colab_config.py": "1868fface0d6ceb0b98ec48865fd15696b9f21142c2b643b1f55f8aeca37bc67",
+    "colab_entry.py": "88ee29ce717e7d50a33a70c0b0e2691381ff4793786a27ef1e35c3033c78d3f3",
+    "contracts.py": "200aa5a78ec9457b1b6a1d8e31b6b6e1726e099ef3cb467a3d3de88a012c51b1",
+    "distribution.py": "3e24acbff8acfbd9d38bf4da0950ab303b855ae5b93955f608fd12ac2ee8f087",
+    "equations.py": "0c3a5f990c949845c7cf93acb03e09cdf7b8b4c957a7932372cae204c8b7828a",
+    "interface.py": "a74bd7e699d3bb7bcb56bfe5a7d8c9889a79c0a5bd23fd4ab209358f9fb7e8ad",
+    "natural_language.py": "7009c1b11c74ce34c703710622c0f998f04a2b12dc4bb8b76a65429ff33c8d96",
+    "services.py": "b562d6e28e7fbe2b34ec2dfa29d2525f6560749de8f866e4125236640f499bce",
+    "session.py": "4621b8a12d8f9c4cd521f1931916405cf05a0639c4fcd0ba8ff692f4cf9ff554",
+    "verification.py": "5589d843536c72712c4604e4593cfac286eae38e9aab42c02e7e9295a8630359",
+    "wave_inference.py": "1c8d43a8bd8a0a45ca4f8955b2952ceda1bbf5b6b012b488af8940bd0c043f80",
+    "wave_runtime.py": "7b3a07d5e8dacf956bb12f5878a7f88c0018951b2e702606dae94fa7edc474ce"
+  }
+}

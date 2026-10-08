@@ -1,66 +1,92 @@
 # Online PINN PDE Framework
 
-2D Wave-PINN 학습·추론을 FastAPI, Hybrid RAG, AI Agent 및 자동 보고서 생성으로 연결한 AI Engineering Portfolio입니다. 해석해가 있는 PDE를 이용하는 재사용 가능한 framework로 확장하고 있습니다.
+### 온라인 PINN PDE 프레임워크 V3
 
-**실행 결과부터 살펴보려면 [V1 실행 Notebook](outputs/Online_PINN_2D_Portfolio_V1_Executed.ipynb)을 확인하세요.** 저장된 출력과 그림은 재학습 없이 읽을 수 있습니다.
+**9개 방정식 · 65개 저장 실험 · 5개 비교 방법**
 
-`2D Wave-PINN → FastAPI → Hybrid RAG → AI Agent → Automated Reporting`
+저장 결과를 비교하고, 좌표를 예측하거나 자연어로 질문할 수 있습니다.
+필요한 방정식만 선택해 설정을 확인·변경하고 추가 학습을 실행할 수도 있습니다.
 
-TensorFlow 기반 모델, FastAPI/Pydantic API, multilingual-e5-small·FAISS·BM25·RRF 검색, Local LLM 도구 호출을 연결합니다. Notebook 실행 시 `app/` 아래 API, schema, service, ML, RAG, Agent 모듈을 생성하는 구조이며, 저장소에는 미리 생성된 서버 패키지나 모델 가중치가 포함되지 않습니다.
+[![Colab에서 실행](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/danny97041/online-pinn-pde-framework/blob/main/outputs/Online_PINN_PDE_Framework_V3.ipynb)
+[![배포 파일](https://img.shields.io/badge/다운로드-GitHub_Releases-2563eb)](https://github.com/danny97041/online-pinn-pde-framework/releases)
+[![사용 안내](https://img.shields.io/badge/안내-한국어-16a34a)](v3/README.md)
 
-## Versioned Notebooks
+## 두 파일로 시작하기
 
-| Version | Notebook | Status | Purpose |
-|---|---|---|---|
-| V1 | [`Online_PINN_2D_Portfolio_V1_Executed.ipynb`](outputs/Online_PINN_2D_Portfolio_V1_Executed.ipynb) | 실행 및 회귀검증 완료 | 고정 50,000 iteration 기반 2D Wave 실행 결과 보존본 |
-| V2 | [`Online_PINN_2D_Portfolio_V2.ipynb`](outputs/Online_PINN_2D_Portfolio_V2.ipynb) | 코드 구현 및 정적 검증 완료 | 최대 100,000 iteration과 Relative L1/L2 목표기반 중단 구조 |
-| V3 | [V3 개발 Notebook](https://github.com/danny97041/online-pinn-pde-framework/blob/codex/v3-pde-framework/outputs/Online_PINN_PDE_Framework_V3.ipynb) | 연구 workflow 개발 중 | 단계별 런타임 검증과 재개 가능한 PDE framework |
+| 파일 | 내용 |
+| --- | --- |
+| [Online_PINN_PDE_Framework_V3.ipynb](outputs/Online_PINN_PDE_Framework_V3.ipynb) | Colab 실행 노트북 |
+| `V3_Results.zip` | 저장 모델·비교 결과·검색 근거·검사 기록 |
 
-V1에는 6개 방법과 4개 seed의 24개 비교 실험, API, Hybrid RAG, Agent, 문서 생성 및 최종 통합 테스트 결과가 저장되어 있습니다. V2의 목표기반 중단 방식은 전체 GPU benchmark를 다시 실행하기 전이므로 실행 검증 완료로 표시하지 않습니다.
+1. 노트북과 결과 ZIP을 내려받아 `MyDrive/PINN`에 함께 둡니다.
+2. 노트북을 Colab에서 열고 **런타임 → 모두 실행**을 선택합니다.
+3. 최초 설정을 적용하거나 60초 기다립니다. 기본 기능은 **저장 결과 보기**입니다.
+4. 맨 아래 실행 패널에서 사용할 기능과 필요한 설정만 선택합니다.
 
-V3의 현재 구현 범위는 Wave2D입니다. Burgers, Kovasznay Forward/Inverse 및 Taylor-Green Vortex는 exact-solution 검증을 선행한 뒤 단계적으로 추가합니다.
+결과표 조회에는 GPU·TensorFlow·Qwen·재학습이 필요하지 않습니다.
+결과 ZIP은 Git 소스와 분리해 Release 첨부 파일로 배포합니다.
 
-## Artifact Policy
+## 무엇을 할 수 있나요?
 
-모델 가중치, TensorFlow checkpoint, 학습 데이터, FAISS index 및 단계별 ZIP은 Git에 저장하지 않습니다. 실행 artifact는 Google Drive에서 별도로 관리합니다. 기존 모델 추론이나 학습 재개에는 호환 artifact가 필요하며 저장소 clone만으로 기존 실행 상태가 복원되지는 않습니다.
+| 기능 | 사용 예 |
+| --- | --- |
+| 저장 결과 보기 | 방정식·방법별 물리장 및 계수 오차 비교 |
+| 좌표 예측 | `poisson2d baseline seed 3234 좌표 [[0.25,0.65]] 예측해줘` |
+| 자연어 질문 | `Poisson에서 방법별 물리장 오차를 비교해줘` |
+| 기능 검사 | 자연어·API·저장 모델·재개·LHS 경계 검사 선택 |
+| 추가 학습 | 방정식·방법 선택 → 설정 확인·변경 → 실행 허용 |
 
-## Recorded Verification
+코드 정의는 분리된 접힘 셀로 제공됩니다. 설정과 결과는 하단 패널에 모여 있습니다.
+선택 기능의 의존성만 사용하며, 기본 실행에서는 학습이나 언어 모델 다운로드를 시작하지 않습니다.
 
-2026-08-31 V1 실행본에 저장된 결과입니다. 이번 문서 정리에서 재실행한 테스트 결과는 아닙니다.
+## 비교 대상
 
-| 테스트 | 저장된 결과 |
-|---|---|
-| Wave2D / RAG API 통합 | 통과 |
-| RAG Retrieval | 12/12 |
-| 기본 Agent Tool Routing | 6/6 |
-| Agent·문서 생성 회귀 | 13/13 |
-| Schema·Calculator 경계값 | 16/16 |
-| Final Integration | 9/9 |
+| 방정식 | 저장 시드 수 |
+| --- | ---: |
+| 2차원 파동 · 2차원 열전도 | 각각 3 |
+| 2차원 포아송 · 버거스 · Kovasznay 순방향/역문제 · Taylor–Green · 2차원 Darcy · 반응–확산 | 각각 1 |
 
-위 값은 한정된 회귀 테스트셋의 통과 건수이며 일반적인 모델 정확도 추정치가 아닙니다. 24/24 비교 실험 완료 역시 수렴 목표 달성이나 PINN의 우위를 뜻하지 않습니다. Supervised-only를 포함한 방법별 오차와 물리 잔차를 함께 해석해야 합니다.
+비교 방법은 **기본 PINN / 손실항 SA / 푸리에 특징 / 푸리에 특징 + 손실항 SA / 푸리에 특징 + 커리큘럼**입니다.
+표는 저장된 실험 결과를 비교합니다. 세부 Adam·L-BFGS 이력과 설정은 결과 ZIP에 있습니다.
 
-V1 소개 셀의 `lambda_1 = 0.972986`, Relative L2 `11.54%`는 2026-08-28 기록입니다. 2026-08-31 제공 ZIP의 `training_result.json`에는 각각 약 `0.972833`, `11.5084%`가 기록되어 있습니다. 날짜가 다른 실행 기록을 혼합하지 않으며 원본 Notebook과 출력은 보존합니다.
+## 자연어·검색·추가 학습
 
-## Execution Guide
+- **Qwen3.5-0.8B**는 요청 의도를 제안하고, 제어기는 허용된 도구를 호출합니다.
+- **multilingual-e5-small + BM25 + 가중 RRF**로 근거를 검색합니다. BM25 경량 경로도 지원합니다.
+- 답변 수치는 저장 결과·계산·예측 도구에서 가져옵니다.
+- 추가 학습은 명시적으로 허용한 경우에만 실행됩니다. 설정만 먼저 확인할 수 있습니다.
+- 학습점은 기본 5천 Adam 업데이트마다 LHS로 교체하며 검증·평가점은 고정합니다.
+- TensorFlow 버전 일치는 강제하지 않습니다. 완료 경계에서 ZIP 하나를 갱신하며 partial ZIP은 만들지 않습니다.
 
-1. 실행할 Notebook을 Google Colab에 업로드합니다. 의존 패키지는 Notebook 설치 셀에서 설치합니다.
-2. V3 최초 실행은 CPU 런타임에서 Stage `1`, mode `new` 또는 `0`으로 시작합니다.
-3. 이후 단계는 앞선 V3 snapshot과 완료 기록을 사용하여 `load` 또는 `1`로 진행합니다.
-4. Stage 4·7·8은 GPU 학습 단계로 각각 smoke, pilot, 승인된 benchmark를 수행합니다.
+자세한 설정과 실행 환경은 [V3 사용 안내](v3/README.md)를 참고하세요.
 
-V3 전체 Colab 순차 실행과 중단 후 복구 검증은 남아 있습니다. 현재 최종 snapshot 셀의 `complete` 표시는 앞선 모든 검증의 성공을 독립적으로 보장하지 않으므로 앞선 셀 오류가 있으면 완료 증거로 사용하지 않습니다. 패키지 버전이 모두 고정되어 있지 않아 환경에 따른 재검증이 필요합니다.
+## 확인된 검사
 
-V3 브랜치의 `work/verify_v3_research_workflow.py`는 구문·구조와 모의 CPU/GPU 불일치 검사를 수행합니다. 학습이나 실제 checkpoint 복구를 검증하는 테스트는 아닙니다. `work/create_v3_research_workflow.py`는 실행 시 V3 Notebook을 다시 생성하여 덮어쓰므로 일반적인 실행에는 사용하지 않습니다.
+제공된 Colab 검사 기록을 통합했습니다. 검사 당시 소스와 환경도 결과 ZIP에 보존합니다.
 
-## Research Scope
+| 검사 | 확인 결과 |
+| --- | --- |
+| 자연어 30문항 + 별도 표현 15문항 · 내부 API | 통과 |
+| Qwen + E5/BM25 경로 | 실행 기록 확인 |
+| 저장 모델 65개 예측·참조 오차 재계산 | 통과 |
+| 후보 새 학습·재개 / Wave 다음 업데이트 / LHS 경계 | 통과 |
+| 최신 비교 문구·조건부 패널·ZIP 보존 | 로컬 검사 통과 |
 
-논문 서지정보와 사용자가 제공한 원문 링크는 V1의 Research & Publications 셀에 있습니다. 이 2D Wave 비교를 학위논문의 Navier–Stokes 실험 수치 재현으로 제시하지 않습니다. Burgers, Kovasznay, Taylor–Green은 계획 단계입니다.
+Qwen의 의도 판단 일치와 제어기 보정은 별도로 기록합니다.
+최신 문구 수정본의 Colab 화면 확인과 별도 계정의 공유 실행 확인은 [배포 체크리스트](docs/V3_RELEASE_CHECKLIST.md)에 별도로 표시합니다.
 
-## Branch Policy
+## 개발 및 이전 버전
 
-- `main`: V1 실행본과 V2 소스 보존. 버전별 검증 범위는 위 표를 따릅니다.
-- `codex/v3-pde-framework`: V3 PDE framework 연구개발
+실행 노트북과 `v3/*.py`는 같은 평문 소스를 사용합니다. 개발용과 일반용의 학습 로직은 같습니다.
 
-자동 모델 승격은 허용하지 않습니다. 정식 benchmark는 pilot 결과를 검토하고 명시적으로 승인한 configuration만 실행합니다.
+| 버전 | 파일 | 범위 |
+| --- | --- | --- |
+| V3 | [Online_PINN_PDE_Framework_V3.ipynb](outputs/Online_PINN_PDE_Framework_V3.ipynb) | 9개 방정식의 저장 비교·추론·도구 호출·선택적 추가 학습 |
+| V2 | [Online_PINN_2D_Portfolio_V2.ipynb](outputs/Online_PINN_2D_Portfolio_V2.ipynb) | 목표기반 중단 코드·정적 검사; 전체 benchmark 재실행 전 |
+| V1 | [Online_PINN_2D_Portfolio_V1_Executed.ipynb](outputs/Online_PINN_2D_Portfolio_V1_Executed.ipynb) | 24개 Wave 비교 실험과 실행 출력 보존 |
 
-`v2-wave2d`는 기존 역사적 태그이며 이름 자체가 V2 전체 실행 검증을 의미하지 않습니다. 별도 라이선스는 아직 지정하지 않았으며 코드 재사용·재배포 조건은 추후 명시합니다.
+V1·V2 노트북과 과거 결과는 보존합니다. 모델·데이터·캐시·비밀정보는 Git에 넣지 않습니다.
+개발 및 배포 확인 절차는 [체크리스트](docs/V3_RELEASE_CHECKLIST.md), 사용자 화면 점검은 [Colab 확인 순서](docs/V3_COLAB_TEST_PLAN.md)에 있습니다.
+5% 및 국소 고정밀 개선 실험은 V4에서 이어갑니다.
+
+별도 라이선스는 아직 지정하지 않았습니다.

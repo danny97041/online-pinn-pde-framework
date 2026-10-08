@@ -1,0 +1,130 @@
+{
+  "revision": "concise-comparison-v3",
+  "distinct_trials": 65,
+  "equations": 9,
+  "archive": "passed",
+  "checks": {
+    "actual_llm.json": {
+      "passed": true,
+      "source_scope": "imported_historical",
+      "sha256": "0c8803ff25d9f2f337014c259ca0ad98f0c6ffbbc9c02a05196306a6b0f532ba"
+    },
+    "current.json": {
+      "passed": true,
+      "source_scope": "imported_historical",
+      "sha256": "cfffd0d30c03eb0be51676a561fe35275eab065a95f6f5697b9049f4eb93859d"
+    },
+    "form_local.json": {
+      "passed": true,
+      "source_scope": "current_local_form",
+      "sha256": "6b258d4129f249032d2b14a575d56af38b78a6b86a0e029c917380608fa5a33b"
+    },
+    "hybrid_rag.json": {
+      "passed": true,
+      "source_scope": "imported_historical",
+      "sha256": "0db785a2aee6184a0b79417d17127457a68f334213b02c3c4fefae4e6683863a"
+    },
+    "llm_intent_baseline.json": {
+      "passed": null,
+      "source_scope": "imported_historical",
+      "sha256": "4bc81537d942499ea2f57bc38a15e2a67765bda7db77b1b6b8b0f9b62bde37de"
+    },
+    "llm_plan_baseline.json": {
+      "passed": null,
+      "source_scope": "imported_historical",
+      "sha256": "442de393344a0487fec14152f46be4edcc336498ac26d1a267b7f1e2bca599d7"
+    },
+    "local_verification.json": {
+      "passed": null,
+      "source_scope": "imported_historical",
+      "sha256": "694559fe0cdb7d1730575e3a2513ba632423cf5cefa2d01804512a898a4e2b5e"
+    },
+    "patch_local.json": {
+      "passed": false,
+      "source_scope": "previous_local_patch",
+      "sha256": "53caa8dbc33b5debda07c7294900a756e8c74c6624840fd60a1ca3471bf4b4ea"
+    },
+    "rules_api.json": {
+      "passed": true,
+      "source_scope": "imported_historical",
+      "sha256": "14b1097624a5ac712ada62f42f89e06a8bb39214482c274a569fa75f01c8ac85"
+    },
+    "source_current_local.json": {
+      "passed": null,
+      "source_scope": "current_local_form",
+      "sha256": "eeca957caf4b2c8f5f875432f3d3c77851f3273ad5ae21f0d26731f30a1f4996"
+    },
+    "source_text_review.json": {
+      "passed": null,
+      "source_scope": "imported_historical",
+      "sha256": "fd6431c4ac305312b6520d527791fd8b4c2021150faf8ae8fa44c1102d0e99de"
+    },
+    "status.json": {
+      "passed": null,
+      "source_scope": "imported_historical",
+      "sha256": "f16493b9ecad223fcda58f16e1d62928a9aef06727dee37c724b4cddbec35264"
+    },
+    "submitted_colab_audit.json": {
+      "passed": true,
+      "source_scope": "imported_historical",
+      "sha256": "c42c6b7f8e4cbe62a96774e1ca2457ad6224bc578cf7c864747f0e01fdb5d466"
+    },
+    "training_settings.json": {
+      "passed": null,
+      "source_scope": "imported_historical",
+      "sha256": "24700557841f4f91027ba9061dd0af488718d3a4161b899a5e47d8efa519db3b"
+    },
+    "wave_handoff_local.json": {
+      "passed": true,
+      "source_scope": "previous_local_patch",
+      "sha256": "9018e1280b6ab5c300cecac9a99f60cf52396a3d89777dc01c863adc1498f5c6"
+    }
+  },
+  "colab_frontend_current_revision": "not_run",
+  "main_promoted": false,
+  "overall_physics_approved": false,
+  "imported_history_not_fresh_validation": true,
+  "submitted_colab_runs": [
+    {
+      "filename": "V3_Check_7a4c0860.zip",
+      "sha256": "eceecb27ceeb6d72771a984913fa8702fd878e1787f2380c47b74350995ac129",
+      "latest_run": "validation/runs/0bacdb8c.json",
+      "passed": true,
+      "revision": "auto-storage-connect-v3",
+      "source_hashes": {
+        "contracts.py": "ae09d07ddb8035f91d8b0678ea30c917c6b3312110bcfc56ca163fa52aa0e710",
+        "equations.py": "1a29b5226343df9bc8bdaca6fcb0920b1342cec23a4326ccaa070a8a3a3984a8",
+        "natural_language.py": "705e85c19c7fc84f266217352c8eee8c7758aae94655f2cad9b4ae0e3795a87e",
+        "services.py": "fc017805d7226d4f00cbbc9b578b187e2ac4d127d94479d129e8d162e3b2c37d",
+        "distribution.py": "7648a98aa038e1fbd01884a465af06265e7c1cf87373dceab073444a4fea391c",
+        "candidate_runtime.py": "9266876a46199393a74f9319aec7670c87923ca22f389694334bbfb0675260e7",
+        "wave_inference.py": "c9e7733aeb358be5baa26166b0e76b411388f1508bbef362befde103a1f5cfec",
+        "wave_runtime.py": "c7af4b8be0e01535e79c842c4152fbe88bf58e4699a5c01b7832e1090bf50d72",
+        "verification.py": "85d34c8ce9c2653da15a602d5f62f0c717b27f8599f3dd5e62e12d54d9c95d2e",
+        "session.py": "b632d0a596e91c4f191f415cf7c2769aa8f962671e8c0b68b00bbf40ae35f392",
+        "interface.py": "a11bed8096e4da7ba0e18abd1519def534e7ea49e31a417457fd843220b4b0b4"
+      }
+    },
+    {
+      "filename": "V3_Check_1b70d87f.zip",
+      "sha256": "6ad10ab131e693f46f9685e1b97d202b63bf4bede5d715b0342a3ce0d85ed2e2",
+      "latest_run": "validation/runs/1b124c59.json",
+      "passed": true,
+      "revision": "auto-storage-connect-v3",
+      "source_hashes": {
+        "contracts.py": "ae09d07ddb8035f91d8b0678ea30c917c6b3312110bcfc56ca163fa52aa0e710",
+        "equations.py": "1a29b5226343df9bc8bdaca6fcb0920b1342cec23a4326ccaa070a8a3a3984a8",
+        "natural_language.py": "705e85c19c7fc84f266217352c8eee8c7758aae94655f2cad9b4ae0e3795a87e",
+        "services.py": "fc017805d7226d4f00cbbc9b578b187e2ac4d127d94479d129e8d162e3b2c37d",
+        "distribution.py": "7648a98aa038e1fbd01884a465af06265e7c1cf87373dceab073444a4fea391c",
+        "candidate_runtime.py": "9266876a46199393a74f9319aec7670c87923ca22f389694334bbfb0675260e7",
+        "wave_inference.py": "c9e7733aeb358be5baa26166b0e76b411388f1508bbef362befde103a1f5cfec",
+        "wave_runtime.py": "c7af4b8be0e01535e79c842c4152fbe88bf58e4699a5c01b7832e1090bf50d72",
+        "verification.py": "85d34c8ce9c2653da15a602d5f62f0c717b27f8599f3dd5e62e12d54d9c95d2e",
+        "session.py": "b632d0a596e91c4f191f415cf7c2769aa8f962671e8c0b68b00bbf40ae35f392",
+        "interface.py": "a11bed8096e4da7ba0e18abd1519def534e7ea49e31a417457fd843220b4b0b4"
+      }
+    }
+  ],
+  "current_edit_scope": "Comparison presentation only; submitted numerical and Qwen checks predate these edits"
+}
