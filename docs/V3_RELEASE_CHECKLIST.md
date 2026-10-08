@@ -1,7 +1,7 @@
-# V3 배포 기록과 체크리스트
+# V3 검증 범위와 유지관리
 
 일반 실행에는 `Online_PINN_PDE_Framework_V3.ipynb`와 `V3_Results.zip` 두 파일을 사용합니다.
-V1·V2와 완료 모델은 보존합니다. 다음 기록은 전체 재학습을 요청하는 체크리스트가 아닙니다.
+소스·문서는 Git으로, 저장 모델을 포함한 결과 ZIP은 Release 첨부 파일로 배포합니다.
 
 ## 완료된 검사
 
@@ -10,8 +10,7 @@ V1·V2와 완료 모델은 보존합니다. 다음 기록은 전체 재학습을
 | Qwen + E5/BM25 자연어 30 + 별도 표현 15문항, 내부 API | `V3_Check_1b70d87f.zip` / `validation/runs/1b124c59.json` | 통과 |
 | 규칙·API, 65개 저장 모델의 예측·고정 참조 오차 | `V3_Check_7a4c0860.zip` / `validation/runs/0bacdb8c.json` | 통과 |
 | 후보 새 학습·재개, Wave Adam 복원, 4999/5000/5001 LHS 경계 | 동일 `0bacdb8c.json` | 통과 |
-| 사용자 확인: 60초 무입력 기본 진행, 65개 결과표, 포아송 자연어 비교 및 좌표 예측 | 제공된 Colab 출력 | 확인됨 |
-| 최신 간결한 비교 문구·조건부 패널·타이머 제어 | `validation/form_local.json` | 로컬 통과 |
+| 비교 문구·조건부 패널·타이머 제어 | `validation/form_local.json` | 로컬 통과 |
 | 수치 코드·학습 일정·Qwen 의도 판단·검색 경로 보존 | `validation/source_current_local.json` | 소스 비교 통과 |
 | ZIP 무결성, 65개 실험·9개 방정식, 두 검사 기록 병합 | `validation/submitted_colab_audit.json` 및 패키지 검사 | 통과 |
 
@@ -21,20 +20,18 @@ Qwen 실행 기록에는 42회 호출, 의도 일치 27회, 제어기 보정 15�
 
 두 원본 ZIP의 기록과 검사 당시 소스가 `V3_Results.zip`에 함께 있습니다.
 `provenance/validation_imports.json`은 원본 ZIP 해시, `provenance/validation_source/`는 검사 당시 노트북을 보존합니다.
-최신 문구 수정은 별도 로컬 검사로 구분합니다. 과거 Windows 로컬 실패 기록도 삭제하지 않고 보존합니다.
+실행 패널 검사는 로컬 환경의 기능 검사이며 Colab 화면 시험과는 구분합니다.
+검사 기록은 실행 시점·소스·환경과 함께 보존하며 과거 검사를 현재 실행의 통과로 표시하지 않습니다.
 
-## 남은 사용자 화면 확인
+## 환경별 시험
 
-- [ ] 최신 `Online_PINN_PDE_Framework_V3.ipynb` + `V3_Results.zip`으로 Colab 기본 조회.
-- [ ] 자연어 비교의 짧은 답변 및 좌표 예측 확인.
-- [ ] 별도 계정에서 공개 뷰어·사본 실행·ZIP 접근 확인.
-
-위 항목은 실제 사용자 환경에서 확인합니다. 자동 검사나 GitHub CI 통과로 대체 표시하지 않습니다.
-전수 모델 검사·45문항·전체 학습은 같은 수정 범위에서 반복할 필요가 없습니다.
+브라우저 화면·Drive 인증·공유 권한은 자동 코드 검사의 범위에 포함되지 않습니다.
+시험 방법과 기대 동작은 [Colab 검증 절차](V3_COLAB_TEST_PLAN.md)에 정의되어 있습니다.
+화면이나 권한 시험 결과는 환경·계정·실행 시점과 함께 별도로 기록합니다.
 
 ## 공개 배포
 
-- 노트북·평문 소스·문서: 배포 브랜치 확인 후 `main` 반영.
+- 노트북·평문 소스·문서: Git 저장소의 `main` 및 버전 태그.
 - 결과 ZIP·개발용 소스 ZIP: GitHub Release 첨부 파일로 배포. Git 이력에는 모델을 넣지 않음.
 - README: Colab 버튼, 정확한 파일명, 다운로드 경로, 실제 완료된 범위 표시.
 - CI: 구문·기본 조회·노트북 소스 동기화 검사. GPU 학습·실제 Colab 화면 검사는 아님.
