@@ -1,109 +1,55 @@
 # Online PINN PDE Framework
 
-### 온라인 PINN PDE 프레임워크 V3
-
-**9개 방정식 · 65개 저장 실험 · 5개 비교 방법**
-
-저장 결과를 비교하고, 좌표를 예측하거나 자연어로 질문할 수 있습니다.
-필요한 방정식만 선택해 설정을 확인·변경하고 추가 학습을 실행할 수도 있습니다.
+물리정보 신경망(PINN)의 학습 결과를 비교하고 저장 모델 추론, 검색, 자연어 도구 호출로 연결하는 프레임워크입니다.
 
 [![Colab에서 실행](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/danny97041/online-pinn-pde-framework/blob/main/outputs/Online_PINN_PDE_Framework_V3.ipynb)
-[![배포 파일](https://img.shields.io/badge/다운로드-GitHub_Releases-2563eb)](https://github.com/danny97041/online-pinn-pde-framework/releases)
-[![사용 안내](https://img.shields.io/badge/안내-한국어-16a34a)](v3/README.md)
+[![다운로드](https://img.shields.io/badge/다운로드-GitHub_Releases-2563eb)](https://github.com/danny97041/online-pinn-pde-framework/releases)
 
-## 두 파일로 시작하기
+## 빠른 시작
 
-| 파일 | 내용 |
+일반 실행에는 두 파일이 필요합니다.
+
+| 파일 | 역할 |
 | --- | --- |
 | [Online_PINN_PDE_Framework_V3.ipynb](outputs/Online_PINN_PDE_Framework_V3.ipynb) | Colab 실행 노트북 |
 | `V3_Results.zip` | 저장 모델·비교 결과·검색 근거·검사 기록 |
 
-1. 노트북과 결과 ZIP을 내려받아 `MyDrive/PINN`에 함께 둡니다.
-2. 노트북을 Colab에서 열고 **런타임 → 모두 실행**을 선택합니다.
-3. 최초 설정을 적용하거나 60초 기다립니다. 기본 기능은 **저장 결과 보기**입니다.
-4. 맨 아래 실행 패널에서 사용할 기능과 필요한 설정만 선택합니다.
+1. [Releases](https://github.com/danny97041/online-pinn-pde-framework/releases)에서 두 파일을 내려받아 `MyDrive/PINN`에 둡니다.
+2. Colab에서 노트북을 열고 **런타임 → 모두 실행**을 선택합니다.
+3. 최초 설정을 적용하거나 60초 기다린 뒤, 하단 패널에서 기능을 선택합니다.
 
-결과표 조회에는 GPU·TensorFlow·Qwen·재학습이 필요하지 않습니다.
-결과 ZIP은 Git 소스와 분리해 Release 첨부 파일로 배포합니다.
+기본 기능은 **저장 결과 보기**입니다. 비교표 조회에는 GPU·TensorFlow·Qwen·재학습이 필요하지 않습니다.
+자세한 실행 방법은 [Colab 사용법](v3/COLAB.md)에 있습니다.
 
-## 무엇을 할 수 있나요?
+## V3 기능
 
-| 기능 | 사용 예 |
+- 9개 방정식, 65개 저장 실험의 물리장·계수 오차 비교.
+- 저장 모델의 좌표 예측과 자연어 질문.
+- Qwen의 도구 호출 제안, E5·BM25 검색, 선택형 FAISS 검색.
+- 방정식·방법·설정 선택에 따른 추가 학습과 체크포인트 재개.
+- 기술보고서·기능 목록 생성, 결과 시각화.
+- 기본 추론 모델 지정·복원과 FastAPI 인터페이스.
+
+비교 방법은 기본 PINN, 손실항 SA, 푸리에 특징, 푸리에 특징 + 손실항 SA, 푸리에 특징 + 커리큘럼입니다.
+저장된 Wave·Heat 실험은 각각 3시드, 나머지는 1시드입니다. 새 학습에는 선택형 4시드 실행도 제공합니다.
+
+## 문서와 소스
+
+| 문서 | 내용 |
 | --- | --- |
-| 저장 결과 보기 | 방정식·방법별 물리장 및 계수 오차 비교 |
-| 좌표 예측 | `poisson2d baseline seed 3234 좌표 [[0.25,0.65]] 예측해줘` |
-| 자연어 질문 | `Poisson에서 방법별 물리장 오차를 비교해줘` |
-| 기능 검사 | 자연어·API·저장 모델·재개·LHS 경계 검사 선택 |
-| 추가 학습 | 방정식·방법 선택 → 설정 확인·변경 → 실행 허용 |
-| 보고서·기능 목록 생성 | 저장 결과로 기술보고서와 기능 문서 생성·검색 편입 |
-| 결과 시각화 | 방법 비교·시드 분산·히트맵·예측/오차 지도·학습 이력 |
-| 추론 모델 관리 | 체크포인트 확인 후 수동 선택·이전 선택 복원 |
+| [V3 기능·실험 조건](v3/README.md) | 비교 대상, 학습 설정, 검색, API |
+| [Colab 사용법](v3/COLAB.md) | 파일 배치, 설정, 실행, 재개 |
+| [개발·검증 안내](docs/DEVELOPMENT.md) | 소스 구조, 노트북 동기화, 검사 범위 |
 
-코드 정의는 분리된 접힘 셀로 제공됩니다. 설정과 결과는 하단 패널에 모여 있습니다.
-선택 기능의 의존성만 사용하며, 기본 실행에서는 학습이나 언어 모델 다운로드를 시작하지 않습니다.
+실행 노트북과 `v3/*.py`는 같은 평문 소스를 사용합니다.
+모델 ZIP은 Release 첨부 파일로 배포하며, 검사 기록은 결과 ZIP의 `validation/`에서 확인할 수 있습니다.
+모델·데이터·캐시·비밀정보는 Git에 포함하지 않습니다.
 
-## 비교 대상
+## 이전 버전
 
-| 방정식 | 저장 시드 수 |
-| --- | ---: |
-| 2차원 파동 · 2차원 열전도 | 각각 3 |
-| 2차원 포아송 · 버거스 · Kovasznay 순방향/역문제 · Taylor–Green · 2차원 Darcy · 반응–확산 | 각각 1 |
-
-비교 방법은 **기본 PINN / 손실항 SA / 푸리에 특징 / 푸리에 특징 + 손실항 SA / 푸리에 특징 + 커리큘럼**입니다.
-표는 저장된 실험 결과를 비교합니다. 세부 Adam·L-BFGS 이력과 설정은 결과 ZIP에 있습니다.
-
-## 자연어·검색·추가 학습
-
-- **Qwen3.5-0.8B**는 요청 의도를 제안하고, 제어기는 허용된 도구를 호출합니다.
-- **multilingual-e5-small + BM25 + 가중 RRF**로 근거를 검색합니다. BM25 경량 경로도 지원합니다.
-- 답변 수치는 저장 결과·계산·예측 도구에서 가져옵니다.
-- 추가 학습은 명시적으로 허용한 경우에만 실행됩니다. 설정만 먼저 확인할 수 있습니다.
-- 학습점은 기본 5천 Adam 업데이트마다 LHS로 교체하며 검증·평가점은 고정합니다.
-- TensorFlow 버전 일치는 강제하지 않습니다. 완료 경계에서 ZIP 하나를 갱신하며 partial ZIP은 만들지 않습니다.
-- 새 학습은 기본 1시드입니다. 선택형 4시드(3234~3237)와 5개 방법 일괄 실행을 지원합니다.
-- 임베딩 검색은 NumPy가 기본이며 FAISS `IndexFlatIP`를 선택적으로 사용할 수 있습니다.
-
-자세한 설정과 실행 환경은 [V3 사용 안내](v3/README.md)를 참고하세요.
-
-## 서비스 모듈
-
-API 요청 형식, 라우터, 서비스 및 모델 등록은 `v3/api_schemas.py`, `v3/api_routes.py`,
-`v3/api_services.py`, `v3/model_registry.py`로 분리되어 있습니다.
-`/models`, `/model/info`, `/rag/context`, `/predict/batch`로 모델 정보·검색 문맥·배치 예측을 조회합니다.
-수동 등록 모델은 `/predict/active`에서 사용하며 일반 `/predict`의 명시적 모델 선택과 구분됩니다.
-등록 API 쓰기는 기본 비활성입니다.
-
-V4는 Supervised-only 비교, 실행 출력 포함 데모, L1·L2 동시 5% 목표를 다룹니다.
-V3의 저장 결과와 중단 이력은 변경하지 않습니다.
-
-## 확인된 검사
-
-검사 결과·환경·실행 소스의 해시는 결과 ZIP의 `validation/`과 `provenance/`에 있습니다.
-
-| 검사 | 확인 결과 |
-| --- | --- |
-| 자연어 30문항 + 별도 표현 15문항 · 내부 API | 통과 |
-| Qwen + E5/BM25 경로 | 실행 기록 확인 |
-| 저장 모델 65개 예측·참조 오차 재계산 | 통과 |
-| 후보 새 학습·재개 / Wave 다음 업데이트 / LHS 경계 | 통과 |
-| 비교 문구·조건부 패널·ZIP 보존 | 로컬 검사 통과 |
-
-Qwen의 의도 판단 일치와 제어기 보정은 별도로 기록합니다.
-자동 검사의 범위는 문법·소스 동기화·기능 동작입니다. 브라우저 화면과 공유 권한은 실행 환경별로 다를 수 있습니다.
-
-## 개발 및 이전 버전
-
-실행 노트북과 `v3/*.py`는 같은 평문 소스를 사용합니다. 개발용과 일반용의 학습 로직은 같습니다.
-
-| 버전 | 파일 | 범위 |
+| 버전 | 노트북 | 내용 |
 | --- | --- | --- |
-| V3 | [Online_PINN_PDE_Framework_V3.ipynb](outputs/Online_PINN_PDE_Framework_V3.ipynb) | 9개 방정식의 저장 비교·추론·도구 호출·선택적 추가 학습 |
-| V2 | [Online_PINN_2D_Portfolio_V2.ipynb](outputs/Online_PINN_2D_Portfolio_V2.ipynb) | 목표기반 중단 코드·정적 검사; 전체 benchmark 재실행 전 |
-| V1 | [Online_PINN_2D_Portfolio_V1_Executed.ipynb](outputs/Online_PINN_2D_Portfolio_V1_Executed.ipynb) | 24개 Wave 비교 실험과 실행 출력 보존 |
+| V2 | [Online_PINN_2D_Portfolio_V2.ipynb](https://github.com/danny97041/online-pinn-pde-framework/blob/main/outputs/Online_PINN_2D_Portfolio_V2.ipynb) | 목표 기반 중단을 포함한 Wave 실험 코드 |
+| V1 | [Online_PINN_2D_Portfolio_V1_Executed.ipynb](https://github.com/danny97041/online-pinn-pde-framework/blob/main/outputs/Online_PINN_2D_Portfolio_V1_Executed.ipynb) | 24개 Wave 비교 실험과 실행 출력 |
 
-V1·V2 노트북과 과거 결과는 보존합니다. 모델·데이터·캐시·비밀정보는 Git에 넣지 않습니다.
-개발 및 배포 확인 절차는 [검증 안내](docs/V3_RELEASE_CHECKLIST.md), 화면·공유 시험 방법은 [Colab 검증 절차](docs/V3_COLAB_TEST_PLAN.md)에 있습니다.
-
-별도 라이선스는 아직 지정하지 않았습니다.
-
-V4의 방정식별 역문제·추가 후보는 [V4 연구 계획](docs/V4_RESEARCH_PLAN.md)에 구현 예정 범위로 구분합니다.
+별도 라이선스는 지정하지 않았습니다.

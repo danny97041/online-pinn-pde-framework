@@ -1069,7 +1069,7 @@ def load_wave_inference():
         audit_json(output_root / "summary.json", summary)
         audit_pack(output_root, output_zip)
         print(
-            "Complete: 15 trials / 30 saved model stages. Submit ZIP only:",
+            "Complete: 15 trials / 30 saved model stages. Output ZIP:",
             Path(output_zip).name,
         )
         return summary

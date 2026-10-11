@@ -7,22 +7,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def main():
+def publication_paths():
+    """Explicit public source list; run-specific evidence remains in result ZIPs."""
     paths = [
         ROOT / "README.md",
         ROOT / ".gitignore",
+        ROOT / ".gitattributes",
         ROOT / ".github/workflows/v3-source.yml",
     ]
     paths += sorted(p for p in (ROOT / "v3").glob("*") if p.is_file())
-    paths += [
-        ROOT / "docs" / n
-        for n in [
-            "V3_RELEASE_CHECKLIST.md",
-            "V3_COLAB_TEST_PLAN.md",
-            "V3_RELEASE_NOTES.md",
-            "V4_RESEARCH_PLAN.md",
-        ]
-    ]
+    paths += [ROOT / "docs/DEVELOPMENT.md"]
     paths += [
         ROOT / "tools" / n
         for n in [
@@ -34,22 +28,21 @@ def main():
             "package_v3.py",
             "audit_v3_checks.py",
             "prepare_v3_publish.py",
+            "check_public_docs.py",
         ]
     ]
     paths += [
         ROOT / "outputs" / n
         for n in [
             "Online_PINN_PDE_Framework_V3.ipynb",
-            "V3_Release_Checksums.json",
-            "V3_Release_Status.json",
-            "V3_Source_Text_Review.json",
-            "V3_Form_Verification.json",
-            "V3_Service_Verification.json",
-            "V3_Validation_Audit.json",
-            "V3_Publication_Review.json",
         ]
     ]
+    return paths
+
+
+def main():
     rows = []
+    paths = publication_paths()
     for path in paths:
         content = path.read_text(encoding="utf-8").replace("\r\n", "\n").encode("utf-8")
         rows.append(

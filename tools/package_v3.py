@@ -11,6 +11,23 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+PUBLIC_DOCS = ("DEVELOPMENT.md",)
+RETIRED_DOCS = (
+    "V3_COLAB_TEST_PLAN.md",
+    "V3_RELEASE_CHECKLIST.md",
+    "V3_RELEASE_NOTES.md",
+    "V4_RESEARCH_PLAN.md",
+)
+
+
+def result_readme():
+    """Resolve the source manual's links from the result archive root."""
+    return (
+        (ROOT / "v3/README.md")
+        .read_text(encoding="utf-8")
+        .replace("(../docs/DEVELOPMENT.md)", "(docs/DEVELOPMENT.md)")
+    )
+
 
 def main(evidence_zip, validation_zips=(), include_plots=False):
     from v3 import context
@@ -39,10 +56,9 @@ def main(evidence_zip, validation_zips=(), include_plots=False):
     original_source = data / "source_snapshot"
     replaced = {
         "README.md",
+        "COLAB.md",
         "REPORT.md",
-        "docs/V3_COLAB_TEST_PLAN.md",
-        "docs/V3_RELEASE_CHECKLIST.md",
-        "docs/V3_RELEASE_NOTES.md",
+        "docs/DEVELOPMENT.md",
         "provenance/distribution_source.json",
         "provenance/validation_imports.json",
         "validation/status.json",
@@ -57,7 +73,6 @@ def main(evidence_zip, validation_zips=(), include_plots=False):
         "generated_documents/technical_report.md",
         "generated_documents/feature_catalog.md",
         "generated_documents/manifest.json",
-        "docs/V4_RESEARCH_PLAN.md",
     }
     excluded_prefixes = (
         "provenance/source_history/",
@@ -66,7 +81,7 @@ def main(evidence_zip, validation_zips=(), include_plots=False):
     excluded_files = {
         "validation/source_text_review.json",
         "validation/llm_plan_baseline.json",
-    }
+    } | {"docs/" + name for name in RETIRED_DOCS}
     omitted = {
         name: digest
         for name, digest in originals.items()
@@ -85,9 +100,15 @@ def main(evidence_zip, validation_zips=(), include_plots=False):
     immutable = {
         name: digest
         for name, digest in originals.items()
-        if name not in {"unified_manifest.json", "README.md", "REPORT.md"}
+        if name not in {"unified_manifest.json", "README.md", "COLAB.md", "REPORT.md"}
         and not name.startswith(
-            ("source_snapshot/", "provenance/", "validation/", "docs/", "generated_documents/")
+            (
+                "source_snapshot/",
+                "provenance/",
+                "validation/",
+                "docs/",
+                "generated_documents/",
+            )
         )
     }
     for bundle in [baseline, *map(Path, validation_zips)]:
@@ -145,17 +166,15 @@ def main(evidence_zip, validation_zips=(), include_plots=False):
             # Verify the submitted source fingerprint without republishing it.
     for path in (ROOT / "v3").glob("*.py"):
         shutil.copyfile(path, original_source / path.name)
-    shutil.copyfile(ROOT / "v3/README.md", data / "README.md")
+    (data / "README.md").write_text(result_readme(), encoding="utf-8", newline="\n")
+    shutil.copyfile(ROOT / "v3/COLAB.md", data / "COLAB.md")
     ns["u_report_markdown"](data, summary["aggregate"])
     ns["v3_generate_documents"](data)
     if include_plots:
         for equation in sorted({r["equation"] for r in summary["rows"]}):
             ns["v3_visualize"](data, equation, "baseline", 3234)
     (data / "docs").mkdir(exist_ok=True)
-    shutil.copyfile(
-        ROOT / "docs/V3_COLAB_TEST_PLAN.md", data / "docs/V3_COLAB_TEST_PLAN.md"
-    )
-    for name in ["V3_RELEASE_CHECKLIST.md", "V3_RELEASE_NOTES.md", "V4_RESEARCH_PLAN.md"]:
+    for name in PUBLIC_DOCS:
         shutil.copyfile(ROOT / "docs" / name, data / "docs" / name)
     notebook = output / "Online_PINN_PDE_Framework_V3.ipynb"
     ns["u_json"](
@@ -280,14 +299,9 @@ def main(evidence_zip, validation_zips=(), include_plots=False):
     public = [p for p in (ROOT / "v3").glob("*") if p.is_file()]
     public += [
         notebook,
-        ROOT / "docs/V3_RELEASE_CHECKLIST.md",
-        ROOT / "docs/V3_COLAB_TEST_PLAN.md",
-        ROOT / "docs/V3_RELEASE_NOTES.md",
-        ROOT / "docs/V4_RESEARCH_PLAN.md",
+        *[ROOT / "docs" / name for name in PUBLIC_DOCS],
         ROOT / ".github/workflows/v3-source.yml",
     ]
-    if publication_review.exists():
-        public.append(publication_review)
     public += [
         ROOT / "tools" / name
         for name in [
@@ -297,6 +311,7 @@ def main(evidence_zip, validation_zips=(), include_plots=False):
             "package_v3.py",
             "audit_v3_checks.py",
             "prepare_v3_publish.py",
+            "check_public_docs.py",
             "test_v3_wave_handoff.py",
             "test_v3_services.py",
         ]

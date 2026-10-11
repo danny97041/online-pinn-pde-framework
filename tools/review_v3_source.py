@@ -31,6 +31,7 @@ DESCRIPTION_REPLACEMENTS = {
         "Historical exploratory setting 0.004; literature provenance not independently verified": "595f411135c77abb2c249169a4bb3a5050139ad2ff66e97e4fc230207baf9b12",
     },
     "wave_inference.py": {
+        "Complete: 15 trials / 30 saved model stages. Output ZIP:": "36858be384bd0529b85960969d37b72822932d89294b8fcdc3351e4070f7fb55",
         "Post-hoc synthetic Wave residual and reference-field audit": "5ae63beb5ab7d9fe8ee69960470c92df5b295dfa10245a364c6f14b966224eae",
         "Residual statistics describe the fixed diagnostic points, not every point in the domain.": "8d67611311143c180d3cd92cb765b2d5b6470b5803ed9e13ac8e9696795b55cf",
     },
@@ -167,22 +168,9 @@ def main(baseline_zip):
         "runtime_verification": "recorded_separately",
         "training_executed": False,
         "changes": [
-            "API 스키마·라우터·서비스·모델 등록 분리, 명시적 추론 모델 지정·되돌리기 추가",
-            "기술보고서·기능 목록 생성 및 검색 재색인, 저장 결과 시각화 추가",
-            "NumPy 기본 검색 유지, 선택형 FAISS 내적 검색 및 4시드 순차 실행 추가",
-            "일반 비교 답변과 보고서의 반복 안내 축약; 필요한 질문의 확인·추가 설명은 유지",
-            "상단 최초 기능·파일 위치 선택, 60초 무입력 기본 조회와 하단 설정 연동",
-            "사용자 안내와 비교 보고서를 한국어로 정리",
-            "분리된 정의 셀은 기본 접힘, 하단 드롭다운 실행 패널과 바로 아래 결과 표시",
-            "Drive 인증 실패 상태 표시, 명시적 재연결·로컬 ZIP 전환",
-            "대표 노트북 안내를 공개 배포용 기능 설명과 실행 절차로 정리",
-            "결과·검사·학습 ZIP 파일명을 단순화하고 긴 이름 입력도 지원",
-            "모델 전수·Wave 재개·LHS 경계 검사를 선택 실행으로 통합",
-            "사용 안내와 유지관리 문서를 분리",
-            "핵심 학습·샘플링·Qwen 의도 함수 보존; 서비스·검색 선택 기능은 독립 실행 검사로 확인",
-            "Colab 브라우저 콜백 타이머와 하단 안전 기본 조회 버튼 추가; 일반 노트북의 커널 타이머는 유지",
-            "자동 파일 위치에서 연결된 Drive·로컬 ZIP이 없을 때 연결 1회 시도; 화면 버전 안내 문구 제거",
-            "실험 설명을 일반 배포 문구로 정리하고 검사 범위를 간결하게 표시",
+            "공개 문서·비교 보고서·출력 안내 정리",
+            "수치 코드와 도구 호출 함수의 변경 범위 확인",
+            "소스·노트북 동기화 및 설명 문자열 비교",
         ],
         "files_sha256": {
             p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in FILES

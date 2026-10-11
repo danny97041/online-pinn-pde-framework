@@ -11,9 +11,13 @@ venv/
 tmp/
 work/tmp/
 work/pdf_review/
+work/
+docs/*_RUNBOOK.md
 
 # Canonical notebooks only
 outputs/*.ipynb
+outputs/*.json
+outputs/*.md
 !outputs/Online_PINN_2D_Portfolio_V1_Executed.ipynb
 !outputs/Online_PINN_2D_Portfolio_V2.ipynb
 !outputs/Online_PINN_PDE_Framework_V3.ipynb
