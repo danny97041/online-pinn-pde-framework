@@ -5,7 +5,13 @@
 [![Colab에서 실행](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/danny97041/online-pinn-pde-framework/blob/main/outputs/Online_PINN_PDE_Framework_V3.ipynb)
 [![다운로드](https://img.shields.io/badge/다운로드-GitHub_Releases-2563eb)](https://github.com/danny97041/online-pinn-pde-framework/releases)
 
-## 빠른 시작
+## V4 실험 결과
+
+기본 비교는 10개 방정식의 순방향과 역문제에 6개 방법을 적용했습니다. 시드 3234에서 완료한 120개 실험 중 최종 평가점의 상대 L1·L2 오차가 모두 5% 이하인 실험은 Adam 종료 시 116개, L-BFGS 종료 시 119개입니다. 파동 결과는 별도 실행별로 제공합니다.
+
+[비교 결과와 평가 조건](https://github.com/danny97041/online-pinn-pde-framework/tree/main/v4/results) · [V4 Colab 노트북](https://colab.research.google.com/github/danny97041/online-pinn-pde-framework/blob/main/outputs/Online_PINN_PDE_Framework_V4.ipynb) · [V4 사용 안내](https://github.com/danny97041/online-pinn-pde-framework/blob/main/v4/COLAB.md)
+
+## V3 빠른 시작
 
 일반 실행에는 두 파일이 필요합니다.
 

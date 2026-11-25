@@ -1,0 +1,20 @@
+{
+  "equation": "heat2d",
+  "canonical_units_confirmed": false,
+  "domain": [[0, 1], [0, 1], [0, 1]],
+  "fixed_coefficient": 0.1,
+  "field_scales": [1.0],
+  "residual_scales": [1.0],
+  "forcing_mode": "zero",
+  "units": {"x": "m", "y": "m", "t": "s", "u": "known temperature convention", "alpha": "m^2/s"},
+  "provenance": "Replace with dataset source and permitted use; placeholder scales/domain are not data-specific calibration.",
+  "files": {
+    "observations": "observations.csv",
+    "validation": "validation.csv",
+    "evaluation": "evaluation.csv",
+    "boundary": "boundary.csv",
+    "initial": "initial.csv"
+  },
+  "columns": {"observations": {"x": "x", "y": "y", "t": "t", "u": "temperature"}},
+  "transforms": {"observations": {"x": [1, 0], "y": [1, 0], "t": [1, 0], "u": [1, 0]}}
+}
