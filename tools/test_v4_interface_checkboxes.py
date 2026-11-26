@@ -155,6 +155,61 @@ class CheckboxTests(unittest.TestCase):
         equations.disabled = False
         self.assertFalse(any(box.disabled for box in equations.checks.values()))
 
+    def test_goal_filters_single_and_batch_and_preserves_priority(self):
+        p = panel(show=False)
+        w = p["widgets"]
+        w["action"].value = "train"
+        w["batch"].value = True
+        eqs = w["batch_equations"]
+        self.assertEqual(len(w["equation"].options), 11)
+        eqs.value = ("burgers", "poisson2d", "heat2d")
+        w["equation"].value = "poisson2d"
+        w["generalization"].value = "time_extrapolation"
+        expected = {k for k, v in EQUATIONS.items() if v["time_axis"] is not None and k != "cylinder_ns"}
+        self.assertEqual(expected, {k for _, k in w["equation"].options})
+        self.assertEqual(expected, {k for k, box in eqs.checks.items() if box.layout.display != "none"})
+        self.assertEqual(eqs.value, ("burgers", "heat2d"))
+        w["directions"].value = (False,)
+        with patch("v4.interface.experiment_plan", wraps=experiment_plan) as plan:
+            p["execute"]()
+            self.assertEqual(plan.call_args.args[1], ("burgers", "heat2d"))
+        w["generalization"].value = "interpolation"
+        self.assertEqual(len(eqs.available), 11)
+        self.assertEqual(eqs.value, ("burgers", "heat2d"))
+
+    def test_restoring_steady_plan_after_temporal_selection(self):
+        with TemporaryDirectory() as folder, patch("v4.interface.Service") as service:
+            root = Path(folder)
+            saved = Settings(equation="poisson2d", generalization="interpolation")
+            write_json(root / "contract.json", {"kind": "results"})
+            write_json(root / "settings.json", saved.to_dict())
+            write_json(root / "plan.json", [s.to_dict() for s in experiment_plan(saved, ("poisson2d", "heat2d"))])
+            service.return_value.models.return_value = []
+            p = panel(folder=folder, show=False)
+            w = p["widgets"]
+            w["action"].value = "train"
+            w["generalization"].value = "time_extrapolation"
+            p["state"].update(root=root, bundle=str(root / w["zip"].value))
+            p["load_settings"]()
+            self.assertEqual(w["execution"].value, "load")
+            self.assertEqual(w["equation"].value, "poisson2d")
+            self.assertEqual(w["batch_equations"].value, ("poisson2d", "heat2d"))
+            self.assertTrue(w["generalization"].disabled)
+
+    def test_csv_extrapolation_uses_only_chosen_contract_equation(self):
+        p = panel(show=False)
+        w = p["widgets"]
+        w["action"].value = "train"
+        w["generalization"].value = "time_extrapolation"
+        w["data_mode"].value = "csv"
+        w["equation"].value = "cylinder_ns"
+        w["batch"].value = True
+        with patch("v4.interface.experiment_plan", wraps=experiment_plan) as plan:
+            p["execute"]()
+            self.assertEqual(plan.call_args.args[1], ("cylinder_ns",))
+        w["action"].value = "registry"
+        self.assertEqual(len(w["equation"].options), len(EQUATIONS))
+
     def test_remaining_equations_make_120_trial_plan_without_training(self):
         with patch("IPython.display.display"), patch("builtins.print") as output, patch(
             "v4.interface.experiment_plan", wraps=experiment_plan

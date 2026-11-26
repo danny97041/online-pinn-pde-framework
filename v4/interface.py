@@ -94,6 +94,7 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
     class OrderedEquationChecks(SelectionChecks):
         def __init__(self, title, options, selected):
             super().__init__(title, options, selected)
+            self.available = set(self.checks)
             self.order_list = w.Select(description="실행 순서", layout=width, style=style)
             self.up = w.Button(description="위로")
             self.down = w.Button(description="아래로")
@@ -112,13 +113,21 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
 
         @value.setter
         def value(self, values):
-            self._equation_order = list(dict.fromkeys(k for k in values if k in self.checks))
+            self._equation_order = list(dict.fromkeys(k for k in values if k in self.available))
             self._changing_selection = True
             try:
                 SelectionChecks.value.fset(self, self._equation_order)
             finally:
                 self._changing_selection = False
             self._refresh_order()
+
+        def set_available(self, equations):
+            available = set(equations).intersection(self.checks)
+            if available != self.available:
+                self.available = available
+                self.value = self.value
+                for key, box in self.checks.items():
+                    box.layout.display = "" if key in available else "none"
 
         def _selection_changed(self, change):
             if self._changing_selection:
@@ -169,7 +178,7 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
         "시드 구성", [("1시드 · 3234", (3234,)), ("4시드 · 3234~3237", SEEDS)], (3234,)
     )
     generalization = dropdown(
-        "실험 종류",
+        "학습 목표",
         [
             ("기본 비교", "basic"),
             ("16구역 관측 제외 · 보간", "interpolation"),
@@ -254,6 +263,8 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
     dependencies = w.Button(description="선택 기능의 필요 패키지 설치")
     dependency_note = w.HTML()
     fields = w.VBox()
+    goal_note = w.HTML()
+    training_choices = w.VBox([execution, generalization, data_mode, goal_note])
     state = {
         "root": None,
         "bundle": None,
@@ -301,63 +312,57 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
         except (ImportError, AttributeError, OSError):
             return False
 
-    def update(_=None):
+    def uses_equation_list():
+        return batch.value and data_mode.value == "synthetic"
+
+    def update_context(_=None):
+        keys = batch_equations.value if uses_equation_list() else (equation.value,)
         settings_controls.set_context(
             arms.value,
             True in directions.value if batch.value else inverse.value,
             generalization.value,
             data_mode.value,
-            EQUATIONS[equation.value]["time_axis"] is not None,
+            any(k in EQUATIONS and EQUATIONS[k]["time_axis"] is not None for k in keys),
         )
-        selected = (
-            [
-                equation,
-                inverse,
-                arms,
-                seeds,
-                generalization,
-                data_mode,
-                profile,
-                execution,
-                authorized,
-                advanced,
-            ]
-            if action.value == "train"
-            else (
-                [trial, coords]
-                if action.value == "predict"
-                else (
-                    [question, qwen, dense, backend]
-                    if action.value == "ask"
-                    else (
-                        [trial, time_value, component]
-                        if action.value == "plots"
-                        else (
-                            [equation, trial, registry_action, approved]
-                            if action.value == "registry"
-                            else (
-                                [qwen, dense, backend, extra_questions, check_note]
-                                if action.value == "check"
-                                else []
-                            )
-                        )
-                    )
-                )
+
+    def update(_=None):
+        training = action.value == "train"
+        training_choices.layout.display = "" if training else "none"
+        options = tuple(
+            (spec["label"], key) for key, spec in EQUATIONS.items()
+            if not training or (
+                (generalization.value != "time_extrapolation" or spec["time_axis"] is not None)
+                and (data_mode.value == "csv" or key != "cylinder_ns")
             )
         )
-        if action.value == "train" and data_mode.value == "csv":
-            selected.insert(-2, data_contract)
-        if action.value == "train":
-            selected.insert(-2, batch)
+        if equation.options != options:
+            previous = equation.value
+            equation.options = options
+            if any(key == previous for _, key in options):
+                equation.value = previous
+        selected = {
+            "predict": [trial, coords], "ask": [question, qwen, dense, backend],
+            "plots": [trial, time_value, component],
+            "registry": [equation, trial, registry_action, approved],
+            "check": [qwen, dense, backend, extra_questions, check_note],
+        }.get(action.value, [])
+        batch_equations.set_available(k for _, k in options)
+        if training:
+            goal_note.value = (
+                f"시간축이 있는 방정식 {len(options)}개를 선택할 수 있습니다."
+                if generalization.value == "time_extrapolation" else ""
+            )
+            selected = []
+            if data_mode.value == "csv":
+                selected.append(data_contract)
+            selected.extend([batch, batch_equations if uses_equation_list() else equation])
+            selected.extend([directions if batch.value else inverse, arms, seeds, profile])
             if batch.value:
-                selected.remove(equation)
-                selected.remove(inverse)
-                selected[-2:-2] = [
-                    batch_equations,
-                    directions,
-                    noise_levels,
-                    initial_levels,
-                ]
+                if data_mode.value == "synthetic":
+                    selected.append(noise_levels)
+                if True in directions.value:
+                    selected.append(initial_levels)
+            selected.extend([advanced, authorized])
             locked = execution.value == "load"
             for control in (
                 equation,
@@ -377,6 +382,7 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
                 control.disabled = locked or state["busy"]
         elif not state["busy"]:
             equation.disabled = False
+        update_context()
         missing = (
             action.value in {"ask", "check"}
             and dense.value
@@ -579,13 +585,13 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
                     )
                     settings = Settings.from_dict(values)
                     settings_controls.value = values
+                    generalization.value = settings.generalization
+                    data_mode.value = settings.data_mode
                     equation.value = settings.equation
                     inverse.value = settings.inverse
                     arms.value = settings.arms
                     if settings.seeds in ((3234,), SEEDS):
                         seeds.value = settings.seeds
-                    generalization.value = settings.generalization
-                    data_mode.value = settings.data_mode
                     authorized.value = False
                     profile.value = (
                         "smoke" if settings.cap < settings.stop_first else "research"
@@ -691,9 +697,12 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
             try:
                 selected = action.value
                 if selected == "train":
+                    equations = batch_equations.value if uses_equation_list() else (equation.value,)
+                    if not equations:
+                        raise ValueError("방정식 묶음에서 하나 이상 선택하세요.")
                     values = settings_controls.value
                     values.update(
-                        equation=equation.value,
+                        equation=equation.value if execution.value == "load" else equations[0],
                         inverse=inverse.value,
                         arms=list(arms.value),
                         seeds=list(seeds.value),
@@ -709,21 +718,19 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
                         raise ValueError(
                             "선택한 ZIP의 저장 설정·모델 목록을 먼저 불러오세요."
                         )
-                    if batch.value and not batch_equations.value:
-                        raise ValueError("방정식 묶음에서 하나 이상 선택하세요.")
                     configurations = (
                         state["loaded_plan"]
                         if execution.value == "load" and state["loaded_plan"]
                         else (
                             experiment_plan(
                                 settings,
-                                tuple(batch_equations.value),
+                                equations,
                                 directions.value,
-                                tuple(
+                                (0.0,) if data_mode.value == "csv" else tuple(
                                     float(v.strip())
                                     for v in noise_levels.value.split(",")
                                 ),
-                                tuple(
+                                (1.0,) if True not in directions.value else tuple(
                                     float(v.strip())
                                     for v in initial_levels.value.split(",")
                                 ),
@@ -1059,6 +1066,8 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
         widget.observe(update, names="value")
     for checkbox in arms.checks.values():
         checkbox.observe(update, names="value")
+    for checkbox in batch_equations.checks.values():
+        checkbox.observe(update_context, names="value")
     run.on_click(execute)
     connect.on_click(mount)
     local.on_click(use_local)
@@ -1071,6 +1080,7 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
         [
             w.HTML("<h3>설정</h3>"),
             action,
+            training_choices,
             storage,
             zip_name,
             w.HBox([connect, local, load_settings]),
@@ -1099,6 +1109,9 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
             "equation": equation,
             "arms": arms,
             "batch": batch,
+            "generalization": generalization,
+            "data_mode": data_mode,
+            "directions": directions,
             "batch_equations": batch_equations,
             "authorized": authorized,
             "settings": settings_controls,
