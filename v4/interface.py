@@ -39,6 +39,7 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
             (v, k)
             for k, v in {
                 "results": "저장 결과 보기",
+                "future": "저장 모델 시간 외삽 평가",
                 "train": "학습 설정·실행",
                 "predict": "좌표 예측",
                 "ask": "자연어 질문",
@@ -264,6 +265,8 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
     dependency_note = w.HTML()
     fields = w.VBox()
     goal_note = w.HTML()
+    future_steps = dropdown("외삽 평가 범위", [("1.01 ~ 3.00", 200), ("1.01 ~ 1.20", 20)], 200)
+    future_note = w.HTML("저장한 순방향 기본 모델을 0.01 간격으로 평가합니다. CSV에는 전체 구간, 0.20 단위 구간, 마지막 시점의 오차가 기록됩니다.")
     training_choices = w.VBox([execution, generalization, data_mode, goal_note])
     state = {
         "root": None,
@@ -341,6 +344,7 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
             if any(key == previous for _, key in options):
                 equation.value = previous
         selected = {
+            "future": [future_steps, future_note],
             "predict": [trial, coords], "ask": [question, qwen, dense, backend],
             "plots": [trial, time_value, component],
             "registry": [equation, trial, registry_action, approved],
@@ -435,7 +439,7 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
 
         required = (
             {"tensorflow": "tensorflow", "scipy": "scipy"}
-            if action.value in {"predict", "plots"}
+            if action.value in {"predict", "plots", "future"}
             or (action.value == "train" and authorized.value)
             else {}
         )
@@ -915,6 +919,23 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
                     historical = root / "historical/V3_comparison.md"
                     if historical.exists():
                         display(Markdown(historical.read_text(encoding="utf-8")))
+                elif selected == "future":
+                    from .future_evaluation import evaluate_saved, save_evaluation
+
+                    steps = future_steps.value
+                    rows = evaluate_saved(root, steps=steps)
+                    output = Path(storage.value) / (f"V4_Future{steps}_" + uuid.uuid4().hex[:8] + ".zip")
+                    save_evaluation(rows, output, steps=steps)
+                    lines = ["| 방정식 | 방법 | 시드 | 단계 | 미래 L1 (%) | 미래 L2 (%) |",
+                             "|---|---|---:|---|---:|---:|"]
+                    for row in rows:
+                        lines.append(
+                            f"| {EQUATIONS[row['equation']]['label']} | {ARM_LABELS[row['arm']]} | "
+                            f"{row['seed']} | {row['stage']} | {row['future_l1_pct']:.4f} | "
+                            f"{row['future_l2_pct']:.4f} |"
+                        )
+                    display(Markdown("\n".join(lines)))
+                    print("평가 결과:", output.name)
                 elif selected == "predict":
                     print(service.predict(trial.value, json.loads(coords.value)))
                 elif selected == "ask":
