@@ -16,6 +16,13 @@ from .reporting import reports
 from .runtime import Runtime
 from .storage import sha_file
 
+# Index bounds into the 0.01-spaced future time grid (right bound exclusive).
+PHASES = (
+    ("early", "초기", 0, 20),
+    ("middle", "중기", 20, 100),
+    ("late", "후기", 100, 200),
+)
+
 
 def future_grid(spec, steps=20):
     """Future time grid at 1% increments of the original time span."""
@@ -81,14 +88,18 @@ def evaluate_saved(root, log=print, *, steps=20):
             future = observed_metrics(reference, prediction)
             endpoint = observed_metrics(reference[last], prediction[last])
             windows = {}
+            intervals = [
+                (name, start, stop) for name, _, start, stop in PHASES if stop <= steps
+            ]
             for start in range(0, steps, 20):
-                lo, hi = sample_times[start], sample_times[start + 19]
+                name = f"t{sample_times[start]:.2f}_{sample_times[start + 19]:.2f}"
+                intervals.append((name, start, start + 20))
+            for name, start, stop in intervals:
+                lo, hi = sample_times[start], sample_times[stop - 1]
                 mask = (times >= lo) & (times <= hi)
                 block = observed_metrics(reference[mask], prediction[mask])
                 for norm in ("l1", "l2"):
-                    windows[f"t{lo:.2f}_{hi:.2f}_{norm}_pct"] = (
-                        100 * block["relative_" + norm]
-                    )
+                    windows[f"{name}_{norm}_pct"] = 100 * block["relative_" + norm]
             rows.append(
                 dict(
                     run_id=run_id,
@@ -129,6 +140,15 @@ def save_evaluation(rows, path, *, steps=20):
         forecast_fraction=steps / 100,
         time_grid=f"1.01 to {end:.2f} in steps of 0.01 for training domain [0,1]",
         window_columns="non-overlapping 20-sample intervals, inclusive of both labelled times",
+        phase_time_bounds={
+            name: {
+                "after": 1 + start / 100,
+                "through": 1 + stop / 100,
+                "time_samples": stop - start,
+            }
+            for name, _, start, stop in PHASES
+            if stop <= steps
+        },
         spatial_grid="cell centres: 256 in 1D, 32 x 32 in 2D",
         reference="continued synthetic exact_field",
         scaling="original training domain and field scales",

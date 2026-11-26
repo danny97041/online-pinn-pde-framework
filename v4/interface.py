@@ -266,7 +266,7 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
     fields = w.VBox()
     goal_note = w.HTML()
     future_steps = dropdown("외삽 평가 범위", [("1.01 ~ 3.00", 200), ("1.01 ~ 1.20", 20)], 200)
-    future_note = w.HTML("저장한 순방향 기본 모델을 0.01 간격으로 평가합니다. CSV에는 전체 구간, 0.20 단위 구간, 마지막 시점의 오차가 기록됩니다.")
+    future_note = w.HTML("저장 모델을 0.01 간격으로 평가합니다. 초기(1.01~1.20), 중기(1.21~2.00), 후기(2.01~3.00)의 오차를 각각 계산합니다.")
     training_choices = w.VBox([execution, generalization, data_mode, goal_note])
     state = {
         "root": None,
@@ -920,20 +920,22 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
                     if historical.exists():
                         display(Markdown(historical.read_text(encoding="utf-8")))
                 elif selected == "future":
-                    from .future_evaluation import evaluate_saved, save_evaluation
+                    from .future_evaluation import PHASES, evaluate_saved, save_evaluation
 
                     steps = future_steps.value
                     rows = evaluate_saved(root, steps=steps)
                     output = Path(storage.value) / (f"V4_Future{steps}_" + uuid.uuid4().hex[:8] + ".zip")
                     save_evaluation(rows, output, steps=steps)
-                    lines = ["| 방정식 | 방법 | 시드 | 단계 | 미래 L1 (%) | 미래 L2 (%) |",
-                             "|---|---|---:|---|---:|---:|"]
+                    phases = [(name, label) for name, label, _, stop in PHASES if stop <= steps]
+                    columns = ["방정식", "방법", "시드", "단계", "전체"] + [label for _, label in phases]
+                    lines = ["각 칸은 상대 L1 / L2 오차(%)입니다.", "",
+                             "| " + " | ".join(columns) + " |", "|" + "---|" * len(columns)]
                     for row in rows:
-                        lines.append(
-                            f"| {EQUATIONS[row['equation']]['label']} | {ARM_LABELS[row['arm']]} | "
-                            f"{row['seed']} | {row['stage']} | {row['future_l1_pct']:.4f} | "
-                            f"{row['future_l2_pct']:.4f} |"
-                        )
+                        cells = [EQUATIONS[row["equation"]]["label"], ARM_LABELS[row["arm"]],
+                                 str(row["seed"]), row["stage"]]
+                        for name in ["future", *(key for key, _ in phases)]:
+                            cells.append(f"{row[name + '_l1_pct']:.4f} / {row[name + '_l2_pct']:.4f}")
+                        lines.append("| " + " | ".join(cells) + " |")
                     display(Markdown("\n".join(lines)))
                     print("평가 결과:", output.name)
                 elif selected == "predict":
