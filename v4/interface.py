@@ -91,6 +91,77 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
             for box in self.checks.values():
                 box.disabled = value
 
+    class OrderedEquationChecks(SelectionChecks):
+        def __init__(self, title, options, selected):
+            super().__init__(title, options, selected)
+            self.order_list = w.Select(description="실행 순서", layout=width, style=style)
+            self.up = w.Button(description="위로")
+            self.down = w.Button(description="아래로")
+            self.children += (self.order_list, w.HBox([self.up, self.down]))
+            self._changing_selection = False
+            self.value = selected
+            for box in self.checks.values():
+                box.observe(self._selection_changed, names="value")
+            self.order_list.observe(self._update_buttons, names="value")
+            self.up.on_click(lambda _: self._move(-1))
+            self.down.on_click(lambda _: self._move(1))
+
+        @property
+        def value(self):
+            return tuple(self._equation_order)
+
+        @value.setter
+        def value(self, values):
+            self._equation_order = list(dict.fromkeys(k for k in values if k in self.checks))
+            self._changing_selection = True
+            try:
+                SelectionChecks.value.fset(self, self._equation_order)
+            finally:
+                self._changing_selection = False
+            self._refresh_order()
+
+        def _selection_changed(self, change):
+            if self._changing_selection:
+                return
+            key = next(k for k, box in self.checks.items() if box is change.owner)
+            if change.new:
+                self._equation_order.append(key)
+            else:
+                self._equation_order.remove(key)
+            self._refresh_order()
+
+        def _refresh_order(self):
+            order = self._equation_order
+            selected = self.order_list.value
+            self.order_list.options = [
+                (f"{i}. {self.checks[k].description}", k) for i, k in enumerate(order, 1)
+            ]
+            self.order_list.value = selected if selected in order else next(iter(order), None)
+            self._update_buttons()
+
+        def _update_buttons(self, change=None):
+            order = self._equation_order
+            selected = self.order_list.value
+            locked = self.disabled or selected not in order
+            self.up.disabled = locked or selected == order[0]
+            self.down.disabled = locked or selected == order[-1]
+
+        def _move(self, step):
+            selected = self.order_list.value
+            if self.disabled or selected not in self._equation_order:
+                return
+            i = self._equation_order.index(selected)
+            j = i + step
+            if 0 <= j < len(self._equation_order):
+                self._equation_order.insert(j, self._equation_order.pop(i))
+                self._refresh_order()
+
+        @SelectionChecks.disabled.setter
+        def disabled(self, value):
+            SelectionChecks.disabled.fset(self, value)
+            self.order_list.disabled = value
+            self._update_buttons()
+
     arms = SelectionChecks(
         "비교 방법", [(ARM_LABELS[k], k) for k in ARMS], ("baseline",)
     )
@@ -121,7 +192,7 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
     batch = w.Checkbox(
         description="여러 방정식·민감도 조건을 한 번에 실행", value=False
     )
-    batch_equations = SelectionChecks(
+    batch_equations = OrderedEquationChecks(
         "방정식 묶음",
         [(v["label"], k) for k, v in EQUATIONS.items() if k != "cylinder_ns"],
         ("wave2d",),
@@ -701,8 +772,8 @@ def panel(folder="/content/drive/MyDrive/pinnV4", show=True):
                                 for k in settings.arms
                             )
                             + "\n\n"
-                            + "방정식: **"
-                            + ", ".join(
+                            + ("방정식 실행 순서: **" if batch.value else "방정식: **")
+                            + " → ".join(
                                 dict.fromkeys(
                                     EQUATIONS[s.equation]["label"]
                                     for s in configurations

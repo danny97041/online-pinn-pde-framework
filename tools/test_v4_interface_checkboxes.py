@@ -1,6 +1,8 @@
 """Focused read-only checks for checkbox selection and Korean plan summaries."""
 
+import json
 from pathlib import Path
+from tempfile import TemporaryDirectory
 import sys
 import unittest
 from unittest.mock import patch
@@ -12,7 +14,7 @@ from v4.config import Settings
 from v4.settings_panel import settings_editor
 from v4.interface import panel
 from v4.equations import EQUATIONS
-from v4.experiments import experiment_plan
+from v4.experiments import execute_plan, experiment_plan
 from v4.storage import write_json, sha_file
 
 
@@ -93,11 +95,58 @@ class CheckboxTests(unittest.TestCase):
         self.assertEqual(len(equations.checks), 11)
         self.assertNotIn("cylinder_ns", equations.checks)
         equations.value = ("poisson2d", "heat2d")
-        self.assertEqual(set(equations.value), {"poisson2d", "heat2d"})
+        self.assertEqual(equations.value, ("poisson2d", "heat2d"))
         equations.checks["wave2d"].value = True
         self.assertIn("wave2d", equations.value)
         equations.value = ()
         self.assertEqual(equations.value, ())
+        self.assertTrue(equations.up.disabled and equations.down.disabled)
+
+    def test_order_buttons_control_plan_preview_and_prepared_execution(self):
+        with patch("IPython.display.display") as display, patch("builtins.print"), patch(
+            "v4.interface.execute_plan"
+        ) as train:
+            p = panel(show=False)
+            widgets = p["widgets"]
+            widgets["action"].value = "train"
+            widgets["batch"].value = True
+            widgets["authorized"].value = True
+            eqs = widgets["batch_equations"]
+            eqs.checks["heat2d"].value = True
+            eqs.order_list.value = "heat2d"
+            self.assertTrue(eqs.down.disabled)
+            eqs.up.click()
+            self.assertEqual(eqs.value, ("heat2d", "wave2d"))
+            self.assertTrue(eqs.up.disabled)
+            p["execute"]()
+            self.assertIn("2차원 열전도 → 2차원 파동", str(display.call_args.args[0].data))
+            self.assertIsNotNone(p["state"]["pending_training"])
+            eqs.down.click()
+            with self.assertRaises(RuntimeError):
+                p["run_training"]()
+            train.assert_not_called()
+            eqs.checks["wave2d"].value = False
+            eqs.checks["wave2d"].value = True
+            self.assertEqual(eqs.value, ("heat2d", "wave2d"))
+            eqs.disabled = True
+            eqs.down.click()
+            self.assertEqual(eqs.value, ("heat2d", "wave2d"))
+
+    def test_extrapolation_order_is_saved_and_replayed(self):
+        order = ("heat2d", "wave2d")
+        plan = experiment_plan(Settings(generalization="time_extrapolation"), order)
+        with TemporaryDirectory() as folder, patch("v4.experiments.DataSource"), patch(
+            "v4.experiments.run_all", return_value=[]
+        ) as runner:
+            execute_plan(folder, plan, "result.zip", "resume.zip", True)
+            self.assertEqual(tuple(c.args[1].equation for c in runner.call_args_list), order)
+            saved = json.loads((Path(folder) / "plan.json").read_text(encoding="utf-8"))
+            equations = panel(show=False)["widgets"]["batch_equations"]
+            equations.value = [s["equation"] for s in saved]
+            self.assertEqual(equations.value, order)
+            runner.reset_mock()
+            execute_plan(folder, experiment_plan(plan[0], equations.value), "result.zip", "resume.zip", True)
+            self.assertEqual(tuple(c.args[1].equation for c in runner.call_args_list), order)
 
     def test_busy_state_disables_all_equations(self):
         equations = panel(show=False)["widgets"]["batch_equations"]
